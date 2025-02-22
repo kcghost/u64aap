@@ -19,6 +19,9 @@
 #error "unknown platform"
 #endif
 
+#define xstr(s) str(s)
+#define str(s) #s
+
 void *options;
 long fsize;
 int verbosity=0;
@@ -891,8 +894,8 @@ int main(int argc, const char **argv)
 
 
       if( gopt( options, 'z' ) ){
-
         fprintf( stdout, "u64aap version v%d.%d.%d\n", MAJOR_VERSION, MINOR_VERSION, BUGFIX_VERSION );
+        fprintf( stdout, "fork version: " xstr(GIT_ORIGIN) " " xstr(GIT_VERSION) "\n");
         return 0;
       }
 

@@ -1,7 +1,9 @@
 .PHONY=all
 
+GIT_VERSION=$(shell git describe --always --dirty)
+GIT_ORIGIN=$(shell git remote get-url origin)
 CC=gcc
-CFLAGS=-D_LANGUAGE_C -I ultralib/include
+CFLAGS=-D_LANGUAGE_C -DGIT_VERSION=$(GIT_VERSION) -DGIT_ORIGIN=$(GIT_ORIGIN) -I ultralib/include
 
 all: u64aap
 
