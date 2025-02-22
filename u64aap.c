@@ -3,13 +3,11 @@
 #include <string.h>
 #include <errno.h>
 #include "./gopt.h"
-#include "./n64.h"
+#include "PR/os_vi.h"
 
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 4
 #define BUGFIX_VERSION 4
-
-
 
 #ifdef __unix__
     //unix
@@ -21,52 +19,47 @@
 #error "unknown platform"
 #endif
 
-
 void *options;
 long fsize;
 int verbosity=0;
 int vl_level=0;
 unsigned char *rom_blob;
-typedef unsigned int u32;
-typedef unsigned char	u8;
 
-
-
-u32 getReg_ctrl(Vi_Mode *modep){
+u32 getReg_ctrl(OSViMode *modep){
   // printf( "ctrl %08x\n", modep->comRegs.ctrl);
    return modep->comRegs.ctrl;
 }
 
-u32 getReg_width(Vi_Mode *modep){
+u32 getReg_width(OSViMode *modep){
 //   printf( "width %08x\n", modep->comRegs.width);
    return modep->comRegs.width;
 }
 
-u32 getReg_burst(Vi_Mode *modep){
+u32 getReg_burst(OSViMode *modep){
 //   printf( "burst %08x\n", modep->comRegs.burst);
    return modep->comRegs.burst;
 }
-u32 getReg_vSync(Vi_Mode *modep){
+u32 getReg_vSync(OSViMode *modep){
 //   printf( "vSync %08x\n", modep->comRegs.vSync);
    return modep->comRegs.vSync;
 }
-u32 getReg_hSync(Vi_Mode *modep){
+u32 getReg_hSync(OSViMode *modep){
 //   printf( "hSync %08x\n", modep->comRegs.hSync);
    return modep->comRegs.hSync;
 }
-u32 getReg_leap(Vi_Mode *modep){
+u32 getReg_leap(OSViMode *modep){
 //   printf( "leap %08x\n", modep->comRegs.leap);
    return modep->comRegs.leap;
 }
-u32 getReg_hStart(Vi_Mode *modep){
+u32 getReg_hStart(OSViMode *modep){
 //   printf( "hStart %08x\n", modep->comRegs.hStart);
    return modep->comRegs.hStart;
 }
-u32 getReg_xScale(Vi_Mode *modep){
+u32 getReg_xScale(OSViMode *modep){
 //   printf( "xScale %08x\n", modep->comRegs.xScale);
    return modep->comRegs.xScale;
 }
-u32 getReg_vCurrent(Vi_Mode *modep){
+u32 getReg_vCurrent(OSViMode *modep){
 //   printf( "vCurrent %08x\n", modep->comRegs.vCurrent);
    return modep->comRegs.vCurrent;
 }
@@ -540,7 +533,7 @@ size_t patchCtrl(u8 mode, u32 offset){
       0x00, 0x00, 0x00, 0x00
   };
 
-  u32 val = getReg_ctrl(&Vi_ModeTable[mode]);
+  u32 val = getReg_ctrl(&osViModeTable[mode]);
   value[0]=val>>24; value[1]=val>>16; value[2]=val>>8; value[3]=val;
 
 //printf("offset->: %08x\n",offset);
@@ -581,7 +574,7 @@ if(verbosity >= 1)
   printf("\nsearching vl entries...\n");
   //search for video list offset in rom
 
-//  u32 reg = getReg_ctrl(&Vi_ModeTable[scanmode]);
+//  u32 reg = getReg_ctrl(&osViModeTable[scanmode]);
   //testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
 
 	for(offset=0; offset < fsize; ++offset)
@@ -639,7 +632,7 @@ if(verbosity >= 1)
 
 /*
           int count=0;
-          reg = getReg_width(&Vi_ModeTable[scanmode]);
+          reg = getReg_width(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+4, 4)){
 */
@@ -690,7 +683,7 @@ if(verbosity >= 1)
   printf("\nsearching...\n");
   //search for video table offset in rom
 
-  u32 reg = getReg_ctrl(&Vi_ModeTable[scanmode]);
+  u32 reg = getReg_ctrl(&osViModeTable[scanmode]);
   testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
 
 	for(offset=0; offset < fsize; ++offset)
@@ -700,49 +693,49 @@ if(verbosity >= 1)
 	     //printf("vt ctrl at pos: 0x%x\n", offset);
 
           int count=0;
-          reg = getReg_width(&Vi_ModeTable[scanmode]);
+          reg = getReg_width(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+4, 4)){
           //  printf("vt width at pos: 0x%x\n", offset+4);
             count++;
           }
-          reg = getReg_burst(&Vi_ModeTable[scanmode]);
+          reg = getReg_burst(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+8, 4)){
           //  printf("vt burst at pos: 0x%x\n", offset+8);
               count++;
           }
-          reg = getReg_vSync(&Vi_ModeTable[scanmode]);
+          reg = getReg_vSync(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+12, 4)){
           //  printf("vt vSync at pos: 0x%x\n", offset+12);
               count++;
           }
-          reg = getReg_hSync(&Vi_ModeTable[scanmode]);
+          reg = getReg_hSync(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+16, 4)){
           //  printf("vt hSync at pos: 0x%x\n", offset+16);
               count++;
           }
-          reg = getReg_leap(&Vi_ModeTable[scanmode]);
+          reg = getReg_leap(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+20, 4)){
           //  printf("vt leap at pos: 0x%x\n", offset+20);
               count++;
           }
-          reg = getReg_hStart(&Vi_ModeTable[scanmode]);
+          reg = getReg_hStart(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+24, 4)){
           //  printf("vt hStart at pos: 0x%x\n", offset+24);
               count++;
           }
-          reg = getReg_xScale(&Vi_ModeTable[scanmode]);
+          reg = getReg_xScale(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+28, 4)){
           //  printf("vt xScale at pos: 0x%x\n", offset+28);
               count++;
           }
-          reg = getReg_vCurrent(&Vi_ModeTable[scanmode]);
+          reg = getReg_vCurrent(&osViModeTable[scanmode]);
           testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
           if(!memcmp(testme, rom_blob + offset+32, 4)){
           //  printf("vt vCurrent at pos: 0x%x\n", offset+32);
@@ -790,10 +783,10 @@ u32 offset = searchOffset(from_mode);
 if(verbosity >= 2)
 printf("  found at offset: %08x\n",offset);
 
-//u32 res0 = getReg_ctrl(&Vi_ModeTable[from_mode]);
+//u32 res0 = getReg_ctrl(&osViModeTable[from_mode]);
 //printf("lan1 ctrl: %08x\n",lan1);
 
-//u32 res1 = getReg_ctrl(&Vi_ModeTable[to_mode]);
+//u32 res1 = getReg_ctrl(&osViModeTable[to_mode]);
 //printf("lpn1 ctrl: %08x\n",lpn1);
 
 size_t tmp;
@@ -1042,26 +1035,26 @@ printf("\n\nstage 0 - video table\n");
     printf("\n\nstage 0 - disable aa in video table\n");
 
 
-if(patchMode(N_LAN1, N_LPN1)==0) patch_counter++;
-if(patchMode(N_LAF1, N_LPF1)==0) patch_counter++;
-if(patchMode(N_LAN2, N_LPN2)==0) patch_counter++;
-if(patchMode(N_LAF2, N_LPF2)==0) patch_counter++;
-if(patchMode(N_HAN1, N_HPN1)==0) patch_counter++;
-if(patchMode(N_HAF1, N_HPF1)==0) patch_counter++;
+if(patchMode(OS_VI_NTSC_LAN1, OS_VI_NTSC_LPN1)==0) patch_counter++;
+if(patchMode(OS_VI_NTSC_LAF1, OS_VI_NTSC_LPF1)==0) patch_counter++;
+if(patchMode(OS_VI_NTSC_LAN2, OS_VI_NTSC_LPN2)==0) patch_counter++;
+if(patchMode(OS_VI_NTSC_LAF2, OS_VI_NTSC_LPF2)==0) patch_counter++;
+if(patchMode(OS_VI_NTSC_HAN1, OS_VI_NTSC_HPN1)==0) patch_counter++;
+if(patchMode(OS_VI_NTSC_HAF1, OS_VI_NTSC_HPF1)==0) patch_counter++;
 
-if(patchMode(P_LAN1,	P_LPN1)==0) patch_counter++;
-if(patchMode(P_LAF1,	P_LPF1)==0) patch_counter++;
-if(patchMode(P_LAN2,	P_LPN2)==0) patch_counter++;
-if(patchMode(P_LAF2,	P_LPF2)==0) patch_counter++;
-if(patchMode(P_HAN1,	P_HPN1)==0) patch_counter++;
-if(patchMode(P_HAF1,	P_HPF1)==0) patch_counter++;
+if(patchMode(OS_VI_PAL_LAN1,	OS_VI_PAL_LPN1)==0) patch_counter++;
+if(patchMode(OS_VI_PAL_LAF1,	OS_VI_PAL_LPF1)==0) patch_counter++;
+if(patchMode(OS_VI_PAL_LAN2,	OS_VI_PAL_LPN2)==0) patch_counter++;
+if(patchMode(OS_VI_PAL_LAF2,	OS_VI_PAL_LPF2)==0) patch_counter++;
+if(patchMode(OS_VI_PAL_HAN1,	OS_VI_PAL_HPN1)==0) patch_counter++;
+if(patchMode(OS_VI_PAL_HAF1,	OS_VI_PAL_HPF1)==0) patch_counter++;
 
-if(patchMode(MP_LAN1, MP_LPN1)==0) patch_counter++;
-if(patchMode(MP_LAF1, MP_LPF1)==0) patch_counter++;
-if(patchMode(MP_LAN2, MP_LPN2)==0) patch_counter++;
-if(patchMode(MP_LAF2, MP_LPF2)==0) patch_counter++;
-if(patchMode(MP_HAN1, MP_HPN1)==0) patch_counter++;
-if(patchMode(MP_HAF1, MP_HPF1)==0) patch_counter++;
+if(patchMode(OS_VI_MPAL_LAN1, OS_VI_MPAL_LPN1)==0) patch_counter++;
+if(patchMode(OS_VI_MPAL_LAF1, OS_VI_MPAL_LPF1)==0) patch_counter++;
+if(patchMode(OS_VI_MPAL_LAN2, OS_VI_MPAL_LPN2)==0) patch_counter++;
+if(patchMode(OS_VI_MPAL_LAF2, OS_VI_MPAL_LPF2)==0) patch_counter++;
+if(patchMode(OS_VI_MPAL_HAN1, OS_VI_MPAL_HPN1)==0) patch_counter++;
+if(patchMode(OS_VI_MPAL_HAF1, OS_VI_MPAL_HPF1)==0) patch_counter++;
 
 
 }
@@ -1072,31 +1065,31 @@ else //swap video tables, too
   printf("tage 0 - disable aa in video table + region swap\n");
   printf("stage 0.1 ntsc->pal\n");
   }
-  if(patchMode(N_LAN1, P_LPN1)==0) patch_counter++;
-  if(patchMode(N_LAF1, P_LPF1)==0) patch_counter++;
-  if(patchMode(N_LAN2, P_LPN2)==0) patch_counter++;
-  if(patchMode(N_LAF2, P_LPF2)==0) patch_counter++;
-  if(patchMode(N_HAN1, P_HPN1)==0) patch_counter++;
-  if(patchMode(N_HAF1, P_HPF1)==0) patch_counter++;
+  if(patchMode(OS_VI_NTSC_LAN1, OS_VI_PAL_LPN1)==0) patch_counter++;
+  if(patchMode(OS_VI_NTSC_LAF1, OS_VI_PAL_LPF1)==0) patch_counter++;
+  if(patchMode(OS_VI_NTSC_LAN2, OS_VI_PAL_LPN2)==0) patch_counter++;
+  if(patchMode(OS_VI_NTSC_LAF2, OS_VI_PAL_LPF2)==0) patch_counter++;
+  if(patchMode(OS_VI_NTSC_HAN1, OS_VI_PAL_HPN1)==0) patch_counter++;
+  if(patchMode(OS_VI_NTSC_HAF1, OS_VI_PAL_HPF1)==0) patch_counter++;
 
 
   if(verbosity >= 1)
   printf("stage 0.2 pal->ntsc\n");
-  if(patchMode(P_LAN1,	N_LPN1)==0) patch_counter++;
-  if(patchMode(P_LAF1,	N_LPF1)==0) patch_counter++;
-  if(patchMode(P_LAN2,	N_LPN2)==0) patch_counter++;
-  if(patchMode(P_LAF2,	N_LPF2)==0) patch_counter++;
-  if(patchMode(P_HAN1,	N_HPN1)==0) patch_counter++;
-  if(patchMode(P_HAF1,	N_HPF1)==0) patch_counter++;
+  if(patchMode(OS_VI_PAL_LAN1,	OS_VI_NTSC_LPN1)==0) patch_counter++;
+  if(patchMode(OS_VI_PAL_LAF1,	OS_VI_NTSC_LPF1)==0) patch_counter++;
+  if(patchMode(OS_VI_PAL_LAN2,	OS_VI_NTSC_LPN2)==0) patch_counter++;
+  if(patchMode(OS_VI_PAL_LAF2,	OS_VI_NTSC_LPF2)==0) patch_counter++;
+  if(patchMode(OS_VI_PAL_HAN1,	OS_VI_NTSC_HPN1)==0) patch_counter++;
+  if(patchMode(OS_VI_PAL_HAF1,	OS_VI_NTSC_HPF1)==0) patch_counter++;
 
   if(verbosity >= 1)
   printf("tage 0.3 - mpal->pal\n");
-  if(patchMode(MP_LAN1, P_LPN1)==0) patch_counter++;
-  if(patchMode(MP_LAF1, P_LPF1)==0) patch_counter++;
-  if(patchMode(MP_LAN2, P_LPN2)==0) patch_counter++;
-  if(patchMode(MP_LAF2, P_LPF2)==0) patch_counter++;
-  if(patchMode(MP_HAN1, P_HPN1)==0) patch_counter++;
-  if(patchMode(MP_HAF1, P_HPF1)==0) patch_counter++;
+  if(patchMode(OS_VI_MPAL_LAN1, OS_VI_PAL_LPN1)==0) patch_counter++;
+  if(patchMode(OS_VI_MPAL_LAF1, OS_VI_PAL_LPF1)==0) patch_counter++;
+  if(patchMode(OS_VI_MPAL_LAN2, OS_VI_PAL_LPN2)==0) patch_counter++;
+  if(patchMode(OS_VI_MPAL_LAF2, OS_VI_PAL_LPF2)==0) patch_counter++;
+  if(patchMode(OS_VI_MPAL_HAN1, OS_VI_PAL_HPN1)==0) patch_counter++;
+  if(patchMode(OS_VI_MPAL_HAF1, OS_VI_PAL_HPF1)==0) patch_counter++;
 }
 
 
@@ -1110,31 +1103,31 @@ else //swap video tables, too
       printf("region swap only\n");
       printf("stage 0.1 ntsc->pal\n");
       }
-        if(patchMode(N_LAN1, P_LAN1)==0) patch_counter++;
-        if(patchMode(N_LAF1, P_LAF1)==0) patch_counter++;
-        if(patchMode(N_LAN2, P_LAN2)==0) patch_counter++;
-        if(patchMode(N_LAF2, P_LAF2)==0) patch_counter++;
-        if(patchMode(N_HAN1, P_HAN1)==0) patch_counter++;
-        if(patchMode(N_HAF1, P_HAF1)==0) patch_counter++;
+        if(patchMode(OS_VI_NTSC_LAN1, OS_VI_PAL_LAN1)==0) patch_counter++;
+        if(patchMode(OS_VI_NTSC_LAF1, OS_VI_PAL_LAF1)==0) patch_counter++;
+        if(patchMode(OS_VI_NTSC_LAN2, OS_VI_PAL_LAN2)==0) patch_counter++;
+        if(patchMode(OS_VI_NTSC_LAF2, OS_VI_PAL_LAF2)==0) patch_counter++;
+        if(patchMode(OS_VI_NTSC_HAN1, OS_VI_PAL_HAN1)==0) patch_counter++;
+        if(patchMode(OS_VI_NTSC_HAF1, OS_VI_PAL_HAF1)==0) patch_counter++;
 
     if(verbosity >= 1)
         printf("stage 0.2 pal->ntsc\n");
 
-        if(patchMode(P_LAN1,	N_LAN1)==0) patch_counter++;
-        if(patchMode(P_LAF1,	N_LAF1)==0) patch_counter++;
-        if(patchMode(P_LAN2,	N_LAN2)==0) patch_counter++;
-        if(patchMode(P_LAF2,	N_LAF2)==0) patch_counter++;
-        if(patchMode(P_HAN1,	N_HAN1)==0) patch_counter++;
-        if(patchMode(P_HAF1,	N_HAF1)==0) patch_counter++;
+        if(patchMode(OS_VI_PAL_LAN1,	OS_VI_NTSC_LAN1)==0) patch_counter++;
+        if(patchMode(OS_VI_PAL_LAF1,	OS_VI_NTSC_LAF1)==0) patch_counter++;
+        if(patchMode(OS_VI_PAL_LAN2,	OS_VI_NTSC_LAN2)==0) patch_counter++;
+        if(patchMode(OS_VI_PAL_LAF2,	OS_VI_NTSC_LAF2)==0) patch_counter++;
+        if(patchMode(OS_VI_PAL_HAN1,	OS_VI_NTSC_HAN1)==0) patch_counter++;
+        if(patchMode(OS_VI_PAL_HAF1,	OS_VI_NTSC_HAF1)==0) patch_counter++;
 
         if(verbosity >= 1)
             printf("stage 0.3 mpal->pal\n");
-        if(patchMode(MP_LAN1, P_LAN1)==0) patch_counter++;
-        if(patchMode(MP_LAF1, P_LAF1)==0) patch_counter++;
-        if(patchMode(MP_LAN2, P_LAN2)==0) patch_counter++;
-        if(patchMode(MP_LAF2, P_LAF2)==0) patch_counter++;
-        if(patchMode(MP_HAN1, P_HAN1)==0) patch_counter++;
-        if(patchMode(MP_HAF1, P_HAF1)==0) patch_counter++;
+        if(patchMode(OS_VI_MPAL_LAN1, OS_VI_PAL_LAN1)==0) patch_counter++;
+        if(patchMode(OS_VI_MPAL_LAF1, OS_VI_PAL_LAF1)==0) patch_counter++;
+        if(patchMode(OS_VI_MPAL_LAN2, OS_VI_PAL_LAN2)==0) patch_counter++;
+        if(patchMode(OS_VI_MPAL_LAF2, OS_VI_PAL_LAF2)==0) patch_counter++;
+        if(patchMode(OS_VI_MPAL_HAN1, OS_VI_PAL_HAN1)==0) patch_counter++;
+        if(patchMode(OS_VI_MPAL_HAF1, OS_VI_PAL_HAF1)==0) patch_counter++;
     }//end swap only
 
   }
