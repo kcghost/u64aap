@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,63 +29,53 @@ int verbosity=0;
 int vl_level=0;
 unsigned char *rom_blob;
 
-u32 getReg_ctrl(OSViMode *modep)
-{
-	// printf( "ctrl %08x\n", modep->comRegs.ctrl);
+// verbose printf
+void vpf(int v_level, const char *fmt, ...) {
+	va_list args;
+	if(verbosity >= v_level) {
+		va_start(args, fmt);
+		vprintf(fmt, args);
+		va_end(args);
+	}
+}
+
+u32 getReg_ctrl(OSViMode *modep) {
 	return modep->comRegs.ctrl;
 }
 
-u32 getReg_width(OSViMode *modep)
-{
-    // printf( "width %08x\n", modep->comRegs.width);
+u32 getReg_width(OSViMode *modep) {
 	return modep->comRegs.width;
 }
 
-u32 getReg_burst(OSViMode *modep)
-{
-    // printf( "burst %08x\n", modep->comRegs.burst);
+u32 getReg_burst(OSViMode *modep) {
 	return modep->comRegs.burst;
 }
 
-u32 getReg_vSync(OSViMode *modep)
-{
-    // printf( "vSync %08x\n", modep->comRegs.vSync);
+u32 getReg_vSync(OSViMode *modep) {
 	return modep->comRegs.vSync;
 }
 
-u32 getReg_hSync(OSViMode *modep)
-{
-    // printf( "hSync %08x\n", modep->comRegs.hSync);
+u32 getReg_hSync(OSViMode *modep) {
 	return modep->comRegs.hSync;
 }
 
-u32 getReg_leap(OSViMode *modep)
-{
-    // printf( "leap %08x\n", modep->comRegs.leap);
+u32 getReg_leap(OSViMode *modep) {
 	return modep->comRegs.leap;
 }
 
-u32 getReg_hStart(OSViMode *modep)
-{
-    // printf( "hStart %08x\n", modep->comRegs.hStart);
+u32 getReg_hStart(OSViMode *modep) {
 	return modep->comRegs.hStart;
 }
 
-u32 getReg_xScale(OSViMode *modep)
-{
-    // printf( "xScale %08x\n", modep->comRegs.xScale);
+u32 getReg_xScale(OSViMode *modep) {
 	return modep->comRegs.xScale;
 }
 
-u32 getReg_vCurrent(OSViMode *modep)
-{
-    // printf( "vCurrent %08x\n", modep->comRegs.vCurrent);
+u32 getReg_vCurrent(OSViMode *modep) {
 	return modep->comRegs.vCurrent;
 }
 
-
-u8 patchDitherFilter_Testing()
-{
+u8 patchDitherFilter_Testing() {
 	u8 found=0;
 	u32 offset=0;
 	u32 prev_stop=0;
@@ -145,43 +136,31 @@ u8 patchDitherFilter_Testing()
 		if(!memcmp(FFF7, rom_blob + offset, 2)) {
 			if(!memcmp(_24XX, rom_blob + offset-2, 1)) {
 				// maybe first const in setViSpecialFeatures found
-				if(verbosity >= 1) {
-					printf("osViSetSpecialFeatures const 1 found?\n");
-				}
+				vpf(2,"osViSetSpecialFeatures const 1 found?\n");
 				last_const_nr=1;
-				if(verbosity >= 2) {
-					printf("diff: 0, offset=%x\n",offset);
-				}
+				vpf(3, "diff: 0, offset=%x\n",offset);
 				prev_stop=offset;
 				first_const_offset=offset;
 
 				for(offset=offset; offset < fsize; ++offset) {
-					if(last_const_nr==4) {
+					if(last_const_nr == 4) {
 						break;
 					}
 
 					if(!memcmp(FFFB, rom_blob + offset, 2)) {
 						if(!memcmp(_24XX, rom_blob + offset-2, 1)) {
-							if(verbosity >= 1) {
-								printf("osViSetSpecialFeatures const 2 found?\n");
-							}
+							vpf(2, "osViSetSpecialFeatures const 2 found?\n");
 							last_const_nr=2;
 
 							diff=offset-prev_stop;
-							if(verbosity >= 2) {
-								printf("diff: %d\n",diff);
-							}
+							vpf(3, "diff: %d\n",diff);
 
 							inner_offset_start_alt=offset;
-							if(verbosity >= 2) {
-								printf("inner_offset_start_alt: %x\n",offset);
-							}
+							vpf(3, "inner_offset_start_alt: %x\n",offset);
 
 							//not found const to is too far away
 							if(diff>100) { //76
-								if(verbosity >= 1) {
-									printf("diff too far\n");
-								}
+								vpf(2, "diff too far\n");
 								offset=prev_stop;
 								break;
 							} else {
@@ -195,23 +174,17 @@ u8 patchDitherFilter_Testing()
 
 								if(!memcmp(FFEF, rom_blob + offset, 2)) {
 									if(!memcmp(_24XX, rom_blob + offset-2, 1)) {
-										if(verbosity >= 1) {
-											printf("osViSetSpecialFeatures const 3 found?\n");
-										}
+										vpf(2, "osViSetSpecialFeatures const 3 found?\n");
 										last_const_nr=3;
 
 										diff=offset-prev_stop;
-										if(verbosity >= 2) {
-											printf("diff: %d\n",offset-prev_stop);
-										}
+										vpf(3, "diff: %d\n",offset-prev_stop);
 
 										inner_offset_start=offset; //0x40 between const 3 and const 4
 
 										//not found const to is too far away
 										if(diff>100) { //76
-											if(verbosity >= 1) {
-												printf("diff too far\n");
-											}
+											vpf(1, "diff too far\n");
 											offset=prev_stop;
 											break;
 										} else {
@@ -222,36 +195,26 @@ u8 patchDitherFilter_Testing()
 										for(offset=offset; offset < fsize; ++offset) {
 											if(!memcmp(FCFF, rom_blob + offset, 2)) {
 												if(!memcmp(_24XX, rom_blob + offset-2, 1)) {
-													if(verbosity >= 1) {
-														printf("osViSetSpecialFeatures const 4 found?\n");
-													}
+													vpf(2, "osViSetSpecialFeatures const 4 found?\n");
 													last_const_nr=4;
 													diff=offset-prev_stop;
-													if(verbosity >= 2) {
-														printf("diff: %d\n",offset-prev_stop);
-													}
+													vpf(3, "diff: %d\n",offset-prev_stop);
 													//prev_stop=offset;
 
 													//not found const to is too far away
 													if(diff>100) { //76
-														if(verbosity >= 1) {
-															printf("diff too far\n");
-														}
+														vpf(2, "diff too far\n");
 														offset=prev_stop;
 														break;
 													} else {
 														prev_stop=offset;
-														if(verbosity >= 2) {
-															printf("inner end offset found?\n");
-														}
+														vpf(3, "inner end offset found?\n");
 														inner_offset_start_alt_real=inner_offset_start_alt;
 														inner_offset_start_real=inner_offset_start;
 														first_const_offset_real=first_const_offset;
 														inner_offset_end=offset; //0x40 between const 3 and const 4
 														break;
 													}
-
-
 												}
 
 											}
@@ -270,23 +233,14 @@ u8 patchDitherFilter_Testing()
 
 				}
 			}
-
-
 		}
 	}
 
+	vpf(1, "\n\nstage 1 - bitmask\n");
 
-	if(verbosity >= 1) {
-		printf("\n\nstage 1 - bitmask\n");
-	}
-
-	if(verbosity >= 2) {
-		printf("inner_offset_start_real %x\n",inner_offset_start_real);
-	}
-	if(verbosity >= 2) {
-		printf("inner_offset_end %x\n",inner_offset_end);
-	}
-//near search
+	vpf(2, "inner_offset_start_real %x\n",inner_offset_start_real);
+	vpf(2, "inner_offset_end %x\n",inner_offset_end);
+	//near search
 	if(inner_offset_start_real!=0) {
 
 		for(offset=inner_offset_start_real; offset < inner_offset_end; ++offset) {
@@ -299,30 +253,21 @@ u8 patchDitherFilter_Testing()
 				};
 
 				memcpy(test, rom_blob + offset-2, 4);
-				if(verbosity >= 2) {
-					printf("-->> read test: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
-				}
+				vpf(2, "-->> read test: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
 
 				if((test[0] & 0xFC) == 0x30) {
-					if(verbosity >= 2) {
-						printf("patchoffset found! @%x\n", offset);
-					}
+					vpf(2, "patchoffset found! @%x\n", offset);
 					found=1;
 				} else {
 					if(verbosity >= 2) {
-						printf("patchoffset not found! @%x\n", offset);
+						printf("patchoffset not found! @%lx\n", offset);
 						printf("testing alternative spot :/\n");
 					}
 				}
 
 				break;
-
-
-
-
 			}
 		}
-
 
 		//30 8C 00 40
 		if(found!=1)
@@ -335,45 +280,31 @@ u8 patchDitherFilter_Testing()
 
 					memcpy(test, rom_blob + offset-2, 4);
 					if(verbosity >= 2) {
-						printf("-->> alt offset: %x\n", offset);
+						printf("-->> alt offset: %lx\n", offset);
 						printf("-->> read test alt: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
 					}
 					//  printf("bitshift: c==%x\n",test[0]>>2);
 
 					if((test[0] & 0xFC) == 0x30) {
 						//if(test[0]>>2 == 0xc){
-						if(verbosity >= 1) {
-							printf("patchoffset found alt! @%x\n", offset);
-						}
+						vpf(1, "patchoffset found alt! @%x\n", offset);
 						found=1;
 					} else {
-						if(verbosity >= 1) {
-							printf("patchoffset not found! @%x\n", offset);
-						}
+						vpf(1, "patchoffset not found! @%x\n", offset);
 					}
 
 					break;
 				}
 
 			}
-
 	}
 
-
-
 	if(found==1) {
-		if(verbosity >= 1) {
-			printf(" ### patching dither filter bitmask...\n");
-		}
+		vpf(1, " ### patching dither filter bitmask...\n");
 		memcpy(rom_blob + offset, _0000, 2);
 	}
 
-
-
-//stage 2
-
-
-
+	//stage 2
 	if(inner_offset_start_real!=0 && found==1) {
 
 
@@ -382,9 +313,7 @@ u8 patchDitherFilter_Testing()
 		u8 b=0;
 		u32 branch[8]= {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
-		if(verbosity >= 1) {
-			printf("\n\nstage 2 - branch\n");
-		}
+		vpf(1, "\n\nstage 2 - branch\n");
 		//for(offset=inner_offset_end+2; offset < inner_offset_end+64; offset+=4){
 		for(offset=first_const_offset_real+2-64; offset < inner_offset_end+64; offset+=4) {
 
@@ -400,12 +329,8 @@ u8 patchDitherFilter_Testing()
 			//beqz 0x100
 			if((test[0] & 0xFC) == 0x10) { //beqz
 				if((test[1] & 0x1F) == 0x00) {
-					if(verbosity >= 2) {
-						printf("-->> beqz/beqzl read: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
-					}
-					if(verbosity >= 2) {
-						printf("++ next beqz found!\n");
-					}
+					vpf(2, "-->> beqz/beqzl read: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
+					vpf(2, "++ next beqz found!\n");
 					branch_offset_found=offset;
 					branch[b++]=offset;
 					//  break;
@@ -415,12 +340,8 @@ u8 patchDitherFilter_Testing()
 
 			if((test[0] & 0xFC) == 0x50) { //beqzl
 				if((test[1] & 0x1F) == 0x00) { // zero
-					if(verbosity >= 2) {
-						printf("-->> beqz/beqzl read: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
-					}
-					if(verbosity >= 2) {
-						printf("++ next beqzl found!\n");
-					}
+					vpf(2, "-->> beqz/beqzl read: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
+					vpf(2, "++ next beqzl found!\n");
 					branch_offset_found=offset;
 					branch[b++]=offset;
 					//  break;
@@ -431,9 +352,7 @@ u8 patchDitherFilter_Testing()
 
 		}
 
-		if(verbosity >= 2) {
-			printf("branches (%d/8)\n",b);
-		}
+		vpf(2, "branches (%d/8)\n",b);
 
 		/*
 
@@ -458,7 +377,7 @@ u8 patchDitherFilter_Testing()
 		7 _VI_DITHER_FILTER_OFF f
 		*/
 
-//0x00 don't touch 0x01 on 0x02 off
+		//0x00 don't touch 0x01 on 0x02 off
 		u8 setting[8]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
 		printf("\nGamma correction:\t");
@@ -518,9 +437,7 @@ u8 patchDitherFilter_Testing()
 		printf("\n\n");
 
 
-		if(verbosity >= 1) {
-			printf(" ### patching branches...\n");
-		}
+		vpf(1, " ### patching branches...\n");
 		if(branch_offset_found!=0) {
 			//nop out
 			u8 z=0;
@@ -529,9 +446,7 @@ u8 patchDitherFilter_Testing()
 				if(setting[z]==0x1) {
 					//noop branche
 					memcpy(rom_blob + branch[z], nop, 4);
-					if(verbosity >= 2) {
-						printf("-->> nop: %02x %02x %02x %02x \n", nop[0], nop[1], nop[2], nop[3]);
-					}
+					vpf(2, "-->> nop: %02x %02x %02x %02x \n", nop[0], nop[1], nop[2], nop[3]);
 				} else   if(setting[z]==0x02) {
 					//zero s
 					unsigned char rom_branch[2] = { 0x00, 0x00};
@@ -539,9 +454,7 @@ u8 patchDitherFilter_Testing()
 					rom_branch[0]&=0xFC;
 					rom_branch[1]&=0x1F;
 					memcpy(rom_blob + branch[z], rom_branch, 2);
-					if(verbosity >= 2) {
-						printf("-->> rb: %02x %02x \n", rom_branch[0], rom_branch[1]);
-					}
+					vpf(2, "-->> rb: %02x %02x \n", rom_branch[0], rom_branch[1]);
 				}
 
 			}
@@ -593,45 +506,23 @@ u8 patchDitherFilter_Testing()
 	return found;
 }
 
+void patchCtrl(u8 mode, u32 offset) {
+	unsigned char value[4];
 
-
-
-size_t patchCtrl(u8 mode, u32 offset)
-{
-
-	unsigned char value[4] = {
-		//	0x00, 0x00, 0x31, 0x1e
-		0x00, 0x00, 0x00, 0x00
-	};
-
-	u32 val = getReg_ctrl(&osViModeTable[mode]);
-	value[0]=val>>24;
-	value[1]=val>>16;
-	value[2]=val>>8;
-	value[3]=val;
-
-//printf("offset->: %08x\n",offset);
-//printf("value->: %08x\n",value[3]);
+	u32 ctrl = getReg_ctrl(&osViModeTable[mode]);
+	value[0] = ctrl>>24;
+	value[1] = ctrl>>16;
+	value[2] = ctrl>>8;
+	value[3] = ctrl;
 
 	memcpy(rom_blob + offset, value, 4);
-
-	unsigned char value2[4] = {
-		//	0x00, 0x00, 0x31, 0x1e
-		0x00, 0x00, 0x00, 0x00
-	};
-
-//	memcpy(value2, rom_blob + offset, 4);
-//    printf("-->> read test: %x %x %x %x \n", value2[0], value2[1], value2[2], value2[3]);
-
-	return 1;
 }
 
-size_t searchOffset_vl(u8 level, u8 ucode)
-{
+size_t searchOffset_vl(u8 level, u8 ucode) {
 	size_t offset = 0;
 
 	unsigned char testme[4] = {
-//	0x00, 0x00, 0x31, 0x1e
+		//	0x00, 0x00, 0x31, 0x1e
 		//  0x00, 0x00, 0x00, 0x00
 		0xB9, 0x00, 0x03, 0x1D //fast3d e.g. sm64
 	};
@@ -640,221 +531,107 @@ size_t searchOffset_vl(u8 level, u8 ucode)
 		testme[0]==0xE2;
 	}
 
+	vpf(1, "\nsearching vl entries...\n");
 
-	if(verbosity >= 1) {
-		printf("\nsearching vl entries...\n");
-	}
-	//search for video list offset in rom
-
-//  u32 reg = getReg_ctrl(&osViModeTable[scanmode]);
-	//testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
-
+	//__font_data+array_offset single_character
 	for(offset=0; offset < fsize; ++offset) {
-		if(!memcmp(testme, rom_blob + offset, 4)) { //__font_data+array_offset single_character
+		if(!memcmp(testme, rom_blob + offset, 4)) {
+			vpf(1, "vl entry %02x->", offset, rom_blob[offset + 7] );
+			vpf(2, "vl entry at pos: 0x%x\t%02x->", offset, rom_blob[offset + 7] );
 
-			if(verbosity >= 1) {
-				printf("vl entry %02x->", offset, rom_blob[offset + 7] );    //&= ~5);
-			}
-
-			if(verbosity >= 2) {
-				printf("vl entry at pos: 0x%x\t%02x->", offset, rom_blob[offset + 7] );    //&= ~5);
-			}
-
-			if(level>4) { //patch all location
+			if(level>4) {
+				//patch all location
 				rom_blob[offset + 7] &= ~0x8;
 			} else {
-
 				if(level>0) {
-
 					if(rom_blob[offset + 7]==0x78) {
 						rom_blob[offset + 7] &= ~0x8;
 					}
 				}
 
-
-
 				if(level>1) {
-
 					if(rom_blob[offset + 7]==0x48) {
 						rom_blob[offset + 7] &= ~0x8;
 					}
 				}
 
 				if(level>2) {
-
 					if(rom_blob[offset + 7]==0x58) {
 						rom_blob[offset + 7] &= ~0x8;
 					}
 				}
 
-
-
 				if(level>3) {
-
 					if(rom_blob[offset + 7]==0xd8) {
 						rom_blob[offset + 7] &= ~0x8;
 					}
 				}
-
-
-
 			}
 
-
-			if(verbosity >= 1) {
-				printf("%02x\n", rom_blob[offset + 7] );    //&= ~5);
-			}
-			// rom_blob[offset + 7]=rom_blob[offset + 7]
-
-			/*
-			          int count=0;
-			          reg = getReg_width(&osViModeTable[scanmode]);
-			          testme[0]=reg>>24; testme[1]=reg>>16; testme[2]=reg>>8; testme[3]=reg;
-			          if(!memcmp(testme, rom_blob + offset+4, 4)){
-			*/
-			//  printf("vt width at pos: 0x%x\n", offset+4);
-			//    count++;
-
-			/*
-			          if(count>=3){
-			              if(count==8){
-			                if(verbosity >= 1)
-			                  printf("vt entry found!\n");
-			              }else{
-			                  if(verbosity >= 2){
-			                   printf("vt entry maybe found! (%d/8)\n",count);
-			                   printf("try anyway :D\n");
-			                  }
-			                }
-			            break;
-			          }
-			*/
-
-			//    else{
-			//  printf("vt not found!\n");
-			//  }
-
-
+			vpf(1, "%02x\n", rom_blob[offset + 7] );    //&= ~5));
 		}
-
 	}
 
 	return offset;
 }
 
-size_t searchOffset(u8 scanmode)
-{
+int compare_u32(u32 reg, const void* p2, size_t num) {
+	u8 test[4];
+	test[0]=reg>>24;
+	test[1]=reg>>16;
+	test[2]=reg>>8;
+	test[3]=reg;
+	return memcmp(test, p2, num);
+}
 
+size_t searchOffset(u8 scanmode) {
 	size_t offset = 0;
+	u_int32_t ctrl;
+	int count;
 
-	unsigned char testme[4] = {
-//	0x00, 0x00, 0x31, 0x1e
-		0x00, 0x00, 0x00, 0x00
-	};
+	vpf(1, "\nsearching for video table offset in rom...\n");
 
-	if(verbosity >= 1) {
-		printf("\nsearching...\n");
-	}
-	//search for video table offset in rom
+	ctrl = getReg_ctrl(&osViModeTable[scanmode]);
 
-	u32 reg = getReg_ctrl(&osViModeTable[scanmode]);
-	testme[0]=reg>>24;
-	testme[1]=reg>>16;
-	testme[2]=reg>>8;
-	testme[3]=reg;
-
+	//__font_data+array_offset single_character
 	for(offset=0; offset < fsize; ++offset) {
-		if(!memcmp(testme, rom_blob + offset, 4)) { //__font_data+array_offset single_character
-			//printf("vt ctrl at pos: 0x%x\n", offset);
+		if(compare_u32(ctrl, rom_blob + offset, 4) == 0) {
+			count = 0;
 
-			int count=0;
-			reg = getReg_width(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+4, 4)) {
-				//  printf("vt width at pos: 0x%x\n", offset+4);
+			if(compare_u32(getReg_width(&osViModeTable[scanmode]),    rom_blob + offset + 4 , 4) == 0) {
 				count++;
 			}
-			reg = getReg_burst(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+8, 4)) {
-				//  printf("vt burst at pos: 0x%x\n", offset+8);
+			if(compare_u32(getReg_burst(&osViModeTable[scanmode]),    rom_blob + offset + 8 , 4) == 0) {
 				count++;
 			}
-			reg = getReg_vSync(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+12, 4)) {
-				//  printf("vt vSync at pos: 0x%x\n", offset+12);
+			if(compare_u32(getReg_vSync(&osViModeTable[scanmode]),    rom_blob + offset + 12, 4) == 0) {
 				count++;
 			}
-			reg = getReg_hSync(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+16, 4)) {
-				//  printf("vt hSync at pos: 0x%x\n", offset+16);
+			if(compare_u32(getReg_hSync(&osViModeTable[scanmode]),    rom_blob + offset + 16, 4) == 0) {
 				count++;
 			}
-			reg = getReg_leap(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+20, 4)) {
-				//  printf("vt leap at pos: 0x%x\n", offset+20);
+			if(compare_u32(getReg_leap(&osViModeTable[scanmode]),     rom_blob + offset + 20, 4) == 0) {
 				count++;
 			}
-			reg = getReg_hStart(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+24, 4)) {
-				//  printf("vt hStart at pos: 0x%x\n", offset+24);
+			if(compare_u32(getReg_hStart(&osViModeTable[scanmode]),   rom_blob + offset + 24, 4) == 0) {
 				count++;
 			}
-			reg = getReg_xScale(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+28, 4)) {
-				//  printf("vt xScale at pos: 0x%x\n", offset+28);
+			if(compare_u32(getReg_xScale(&osViModeTable[scanmode]),   rom_blob + offset + 28, 4) == 0) {
 				count++;
 			}
-			reg = getReg_vCurrent(&osViModeTable[scanmode]);
-			testme[0]=reg>>24;
-			testme[1]=reg>>16;
-			testme[2]=reg>>8;
-			testme[3]=reg;
-			if(!memcmp(testme, rom_blob + offset+32, 4)) {
-				//  printf("vt vCurrent at pos: 0x%x\n", offset+32);
+			if(compare_u32(getReg_vCurrent(&osViModeTable[scanmode]), rom_blob + offset + 32, 4) == 0) {
 				count++;
 			}
 
 			if(count>=3) {
 				if(count==8) {
-					if(verbosity >= 1) {
-						printf("vt entry found!\n");
-					}
+					vpf(1, "vt entry found!\n");
 				} else {
-					if(verbosity >= 2) {
-						printf("vt entry maybe found! (%d/8)\n",count);
-						printf("try anyway :D\n");
-					}
+					vpf(1, "vt entry maybe found! (%d/8) trying anyway...\n" ,count);
 				}
 				break;
 			} else {
-				//  printf("vt not found!\n");
+				printf("video table could not be found!\n");
 			}
 
 		}
@@ -864,76 +641,57 @@ size_t searchOffset(u8 scanmode)
 	return offset;
 }
 
-size_t patchMode(u8 from_mode, u8 to_mode)
-{
-
-	if(verbosity >= 1) {
-		printf("search for mode: %d\n",from_mode);
-	}
+size_t patchMode(u8 from_mode, u8 to_mode) {
+	vpf(1, "search for mode: %d\n",from_mode);
 
 	u32 offset = searchOffset(from_mode);
 
 	if(offset == fsize) {
-		if(verbosity >= 1) {
-			printf("error: mode: %d no VT offset found\n", from_mode);
-		}
+		vpf(1, "error: mode: %d no VT offset found\n", from_mode);
 		return -1;
 	}
 
-	if(verbosity >= 2) {
-		printf("  found at offset: %08x\n",offset);
-	}
+	vpf(2, "found at offset: %08x\n",offset);
 
-	//u32 res0 = getReg_ctrl(&osViModeTable[from_mode]);
-	//printf("lan1 ctrl: %08x\n",lan1);
-
-	//u32 res1 = getReg_ctrl(&osViModeTable[to_mode]);
-	//printf("lpn1 ctrl: %08x\n",lpn1);
-
-	size_t tmp;
-	tmp = patchCtrl(to_mode, offset);
+	patchCtrl(to_mode, offset);
 
 	return 0;
 }
 
-
-
-int main(int argc, const char **argv)
-{
+int main(int argc, const char **argv) {
 	printf("-== N64 AA-patcher ==- by saturnu\n\n");
 
 	options = gopt_sort( & argc, argv, gopt_start(
-	                         gopt_option( 'h', 0, gopt_shorts( 'h' ), gopt_longs( "help" )),
-	                         gopt_option( 'z', 0, gopt_shorts( 'z' ), gopt_longs( "version" )),
-	                         gopt_option( 'v', GOPT_REPEAT, gopt_shorts( 'v' ), gopt_longs( "verbose" )),
+		gopt_option( 'h', 0, gopt_shorts( 'h' ), gopt_longs( "help" )),
+		gopt_option( 'z', 0, gopt_shorts( 'z' ), gopt_longs( "version" )),
+		gopt_option( 'v', GOPT_REPEAT, gopt_shorts( 'v' ), gopt_longs( "verbose" )),
 
-	                         gopt_option( 'a', 0, gopt_shorts( 'a' ), gopt_longs( "gc-on" )),
-	                         gopt_option( 'c', 0, gopt_shorts( 'c' ), gopt_longs( "gc-off" )),
+		gopt_option( 'a', 0, gopt_shorts( 'a' ), gopt_longs( "gc-on" )),
+		gopt_option( 'c', 0, gopt_shorts( 'c' ), gopt_longs( "gc-off" )),
 
-	                         gopt_option( 'b', 0, gopt_shorts( 'b' ), gopt_longs( "gd-on" )),
-	                         gopt_option( 'g', 0, gopt_shorts( 'g' ), gopt_longs( "gd-off" )),
+		gopt_option( 'b', 0, gopt_shorts( 'b' ), gopt_longs( "gd-on" )),
+		gopt_option( 'g', 0, gopt_shorts( 'g' ), gopt_longs( "gd-off" )),
 
-	                         gopt_option( 'e', 0, gopt_shorts( 'e' ), gopt_longs( "di-on" )),
-	                         gopt_option( 'd', 0, gopt_shorts( 'd' ), gopt_longs( "di-off" )),
+		gopt_option( 'e', 0, gopt_shorts( 'e' ), gopt_longs( "di-on" )),
+		gopt_option( 'd', 0, gopt_shorts( 'd' ), gopt_longs( "di-off" )),
 
-	                         gopt_option( 'j', 0, gopt_shorts( 'j' ), gopt_longs( "df-on" )),
-	                         gopt_option( 'f', 0, gopt_shorts( 'f' ), gopt_longs( "df-off" )),
+		gopt_option( 'j', 0, gopt_shorts( 'j' ), gopt_longs( "df-on" )),
+		gopt_option( 'f', 0, gopt_shorts( 'f' ), gopt_longs( "df-off" )),
 
-	                         gopt_option( 'q', 0, gopt_shorts( 'q' ), gopt_longs( "dummy" )),
-	                         //gopt_option( 't', 0, gopt_shorts( 't' ), gopt_longs( "no-table" )),
-	                         //gopt_option( 'l', 0, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
-	                         gopt_option( 'l', GOPT_REPEAT, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
+		gopt_option( 'q', 0, gopt_shorts( 'q' ), gopt_longs( "dummy" )),
+		//gopt_option( 't', 0, gopt_shorts( 't' ), gopt_longs( "no-table" )),
+		//gopt_option( 'l', 0, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
+		gopt_option( 'l', GOPT_REPEAT, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
 
-	                         gopt_option( 'k', 0, gopt_shorts( 'k' ), gopt_longs( "fast3d" )),
-	                         gopt_option( '2', 0, gopt_shorts( '2' ), gopt_longs( "f3dex2" )),
+		gopt_option( 'k', 0, gopt_shorts( 'k' ), gopt_longs( "fast3d" )),
+		gopt_option( '2', 0, gopt_shorts( '2' ), gopt_longs( "f3dex2" )),
 
-	                         gopt_option( 's', 0, gopt_shorts( 's' ), gopt_longs( "swap" )),
-	                         gopt_option( 'n', 0, gopt_shorts( 'n' ), gopt_longs( "no-anti-aliasing" )),
+		gopt_option( 's', 0, gopt_shorts( 's' ), gopt_longs( "swap" )),
+		gopt_option( 'n', 0, gopt_shorts( 'n' ), gopt_longs( "no-anti-aliasing" )),
 
-	                         gopt_option( 'o', GOPT_ARG, gopt_shorts( 'o' ), gopt_longs( "output" )),
-	                         gopt_option( 'i', GOPT_ARG, gopt_shorts( 'i' ), gopt_longs( "input" ))  ));
-
-
+		gopt_option( 'o', GOPT_ARG, gopt_shorts( 'o' ), gopt_longs( "output" )),
+		gopt_option( 'i', GOPT_ARG, gopt_shorts( 'i' ), gopt_longs( "input" ))  )
+	);
 
 	if( gopt( options, 'h' ) ) {
 
@@ -1055,12 +813,12 @@ int main(int argc, const char **argv)
 	if( verbosity > 1 ) {
 		fprintf( stderr, "being really verbose\n" );
 	}
-
 	else if( verbosity ) {
 		fprintf( stderr, "being verbose\n" );
 	}
 
-	//int fsize;
+	printf("verbosity: %d\n", verbosity);
+
 	const char *filename_input;
 	const char *filename_output;
 
@@ -1082,9 +840,7 @@ int main(int argc, const char **argv)
 			fsize = ftell(f);
 			fseek(f, 0, SEEK_SET);
 
-			if(verbosity >= 2) {
-				printf("Rom size: %d\n",fsize);
-			}
+			vpf(2, "Rom size: %d\n",fsize);
 
 			rom_blob = malloc(fsize + 1);
 			fread(rom_blob, fsize, 1, f);
@@ -1110,9 +866,7 @@ int main(int argc, const char **argv)
 
 	if( gopt( options, 'o' ) ) {
 
-		if(verbosity >= 1) {
-			printf("\n\nstage 0 - video table\n");
-		}
+		vpf(1, "\n\nstage 0 - video table\n");
 
 
 		if( gopt( options, 'n' ) ) {
@@ -1120,9 +874,7 @@ int main(int argc, const char **argv)
 
 			if( !gopt( options, 's' ) ) {
 
-				if(verbosity >= 1) {
-					printf("\n\nstage 0 - disable aa in video table\n");
-				}
+				vpf(1, "\n\nstage 0 - disable aa in video table\n");
 
 				if(patchMode(OS_VI_NTSC_LAN1, OS_VI_NTSC_LPN1)==0) {
 					patch_counter++;
@@ -1208,9 +960,7 @@ int main(int argc, const char **argv)
 				}
 
 
-				if(verbosity >= 1) {
-					printf("stage 0.2 pal->ntsc\n");
-				}
+				vpf(1, "stage 0.2 pal->ntsc\n");
 				if(patchMode(OS_VI_PAL_LAN1, OS_VI_NTSC_LPN1)==0) {
 					patch_counter++;
 				}
@@ -1230,9 +980,7 @@ int main(int argc, const char **argv)
 					patch_counter++;
 				}
 
-				if(verbosity >= 1) {
-					printf("stage 0.3 - mpal->pal\n");
-				}
+				vpf(1, "stage 0.3 - mpal->pal\n");
 				if(patchMode(OS_VI_MPAL_LAN1, OS_VI_PAL_LPN1)==0) {
 					patch_counter++;
 				}
@@ -1283,9 +1031,7 @@ int main(int argc, const char **argv)
 					patch_counter++;
 				}
 
-				if(verbosity >= 1) {
-					printf("stage 0.2 pal->ntsc\n");
-				}
+				vpf(1, "stage 0.2 pal->ntsc\n");
 
 				if(patchMode(OS_VI_PAL_LAN1, OS_VI_NTSC_LAN1)==0) {
 					patch_counter++;
@@ -1306,9 +1052,7 @@ int main(int argc, const char **argv)
 					patch_counter++;
 				}
 
-				if(verbosity >= 1) {
-					printf("stage 0.3 mpal->pal\n");
-				}
+				vpf(1, "stage 0.3 mpal->pal\n");
 				if(patchMode(OS_VI_MPAL_LAN1, OS_VI_PAL_LAN1)==0) {
 					patch_counter++;
 				}
@@ -1330,9 +1074,7 @@ int main(int argc, const char **argv)
 			}//end swap only
 
 		}
-		if(verbosity >= 1) {
-			printf("=>> %d/18 modes patched!\n\n", patch_counter);
-		}
+		vpf(1, "=>> %d/18 modes patched!\n\n", patch_counter);
 
 	}
 
@@ -1344,13 +1086,6 @@ int main(int argc, const char **argv)
 
 	u8 patches=patchDitherFilter_Testing();
 	if(patches>1) {
-		/*	 int ret = rename(argv[1], "data.bak");
-
-			if(ret==-1){
-				printf("error: backup error\n");
-			}
-		*/
-
 		if( gopt( options, 'o' ) ) {
 
 			if( gopt_arg( options, 'o', & filename_output ) && strcmp( filename_output, "-" ) ) {
@@ -1365,9 +1100,6 @@ int main(int argc, const char **argv)
 
 			}
 		}
-
-		//printf("video table patches (%d/18)\n", patch_counter);
-		//if(verbosity >= 1)
 		if( gopt( options, 'q' ) ) {
 			printf("result: dummy mode - file patched!\n");
 		} else {
@@ -1378,7 +1110,6 @@ int main(int argc, const char **argv)
 		printf("\n\nresult: file not patched!\n");
 	}
 
-//if(verbosity >= 1)
 	printf("done...\n");
 	return 0;
 }
