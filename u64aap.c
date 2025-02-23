@@ -39,42 +39,6 @@ void vpf(int v_level, const char *fmt, ...) {
 	}
 }
 
-u32 getReg_ctrl(OSViMode *modep) {
-	return modep->comRegs.ctrl;
-}
-
-u32 getReg_width(OSViMode *modep) {
-	return modep->comRegs.width;
-}
-
-u32 getReg_burst(OSViMode *modep) {
-	return modep->comRegs.burst;
-}
-
-u32 getReg_vSync(OSViMode *modep) {
-	return modep->comRegs.vSync;
-}
-
-u32 getReg_hSync(OSViMode *modep) {
-	return modep->comRegs.hSync;
-}
-
-u32 getReg_leap(OSViMode *modep) {
-	return modep->comRegs.leap;
-}
-
-u32 getReg_hStart(OSViMode *modep) {
-	return modep->comRegs.hStart;
-}
-
-u32 getReg_xScale(OSViMode *modep) {
-	return modep->comRegs.xScale;
-}
-
-u32 getReg_vCurrent(OSViMode *modep) {
-	return modep->comRegs.vCurrent;
-}
-
 u8 patchDitherFilter_Testing() {
 	u8 found=0;
 	u32 offset=0;
@@ -257,7 +221,7 @@ u8 patchDitherFilter_Testing() {
 
 				if((test[0] & 0xFC) == 0x30) {
 					vpf(2, "patchoffset found! @%x\n", offset);
-					found=1;
+					found = 1;
 				} else {
 					if(verbosity >= 2) {
 						printf("patchoffset not found! @%lx\n", offset);
@@ -509,7 +473,7 @@ u8 patchDitherFilter_Testing() {
 void patchCtrl(u8 mode, u32 offset) {
 	unsigned char value[4];
 
-	u32 ctrl = getReg_ctrl(&osViModeTable[mode]);
+	u32 ctrl = osViModeTable[mode].comRegs.ctrl;
 	value[0] = ctrl>>24;
 	value[1] = ctrl>>16;
 	value[2] = ctrl>>8;
@@ -527,7 +491,7 @@ size_t searchOffset_vl(u8 level, u8 ucode) {
 		0xB9, 0x00, 0x03, 0x1D //fast3d e.g. sm64
 	};
 
-	if(ucode==1) { //F3DEX2 e.g. zelda
+	if(ucode == 1) { //F3DEX2 e.g. zelda
 		testme[0]==0xE2;
 	}
 
@@ -568,20 +532,20 @@ size_t searchOffset_vl(u8 level, u8 ucode) {
 				}
 			}
 
-			vpf(1, "%02x\n", rom_blob[offset + 7] );    //&= ~5));
+			vpf(1, "%02x\n", rom_blob[offset + 7] );
 		}
 	}
 
 	return offset;
 }
 
-int compare_u32(u32 reg, const void* p2, size_t num) {
+int compare_u32(u32 reg, const void* p2) {
 	u8 test[4];
 	test[0]=reg>>24;
 	test[1]=reg>>16;
 	test[2]=reg>>8;
 	test[3]=reg;
-	return memcmp(test, p2, num);
+	return memcmp(test, p2, 4);
 }
 
 size_t searchOffset(u8 scanmode) {
@@ -591,35 +555,35 @@ size_t searchOffset(u8 scanmode) {
 
 	vpf(1, "\nsearching for video table offset in rom...\n");
 
-	ctrl = getReg_ctrl(&osViModeTable[scanmode]);
+	ctrl = osViModeTable[scanmode].comRegs.ctrl;
 
 	//__font_data+array_offset single_character
 	for(offset=0; offset < fsize; ++offset) {
-		if(compare_u32(ctrl, rom_blob + offset, 4) == 0) {
+		if(compare_u32(ctrl, rom_blob + offset) == 0) {
 			count = 0;
 
-			if(compare_u32(getReg_width(&osViModeTable[scanmode]),    rom_blob + offset + 4 , 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.width,    rom_blob + offset + 4)  == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_burst(&osViModeTable[scanmode]),    rom_blob + offset + 8 , 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.burst,    rom_blob + offset + 8)  == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_vSync(&osViModeTable[scanmode]),    rom_blob + offset + 12, 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.vSync,    rom_blob + offset + 12) == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_hSync(&osViModeTable[scanmode]),    rom_blob + offset + 16, 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.hSync,    rom_blob + offset + 16) == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_leap(&osViModeTable[scanmode]),     rom_blob + offset + 20, 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.leap,     rom_blob + offset + 20) == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_hStart(&osViModeTable[scanmode]),   rom_blob + offset + 24, 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.hStart,   rom_blob + offset + 24) == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_xScale(&osViModeTable[scanmode]),   rom_blob + offset + 28, 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.xScale,   rom_blob + offset + 28) == 0) {
 				count++;
 			}
-			if(compare_u32(getReg_vCurrent(&osViModeTable[scanmode]), rom_blob + offset + 32, 4) == 0) {
+			if(compare_u32(osViModeTable[scanmode].comRegs.vCurrent, rom_blob + offset + 32) == 0) {
 				count++;
 			}
 
@@ -697,57 +661,57 @@ int main(int argc, const char **argv) {
 
 #ifdef __unix__
 		//unix
-		fprintf( stdout, "Syntax: u64aap [options] -i input.z64 -o output.z64\n\n");
+		printf("Syntax: u64aap [options] -i input.z64 -o output.z64\n\n");
 #elif defined _WIN32 || defined _WIN64
 		//windows
-		fprintf( stdout, "Syntax: u64aap [options] -i input.z64 -o output.z64\n\n");
+		printf("Syntax: u64aap [options] -i input.z64 -o output.z64\n\n");
 #else
 #error "unknown platform"
 #endif
 
-		fprintf( stdout, "u64aap - -== N64 AA-patcher ==-\n" );
-		fprintf( stdout, "by saturnu <tt@anpa.nl>\n\n" );
+		printf("u64aap - -== N64 AA-patcher ==-\n" );
+		printf("by saturnu <tt@anpa.nl>\n\n" );
 
 		printf("Input/Output: (required)\n");
-		fprintf( stdout, " -i, --input=filename.z64\tN64 Rom in z64 format\n" );
-		fprintf( stdout, " -o, --output=filename.z64\tN64 Rom in z64 format\n" );
+		printf(" -i, --input=filename.z64\tN64 Rom in z64 format\n" );
+		printf(" -o, --output=filename.z64\tN64 Rom in z64 format\n" );
 
 
 		printf("\nFilter options: (default: untouched)\n");
-		fprintf( stdout, " -a, --gc-on\t\tset Gamma correction ON\n" );
-		fprintf( stdout, " -c, --gc-off\t\tset Gamma correction OFF\n" );
+		printf(" -a, --gc-on\t\tset Gamma correction ON\n" );
+		printf(" -c, --gc-off\t\tset Gamma correction OFF\n" );
 
-		fprintf( stdout, " -b, --gd-on\t\tset Gamma dithering ON\n" );
-		fprintf( stdout, " -g, --gd-off\t\tset Gamma dithering OFF\n" );
+		printf(" -b, --gd-on\t\tset Gamma dithering ON\n" );
+		printf(" -g, --gd-off\t\tset Gamma dithering OFF\n" );
 
-		fprintf( stdout, " -e, --di-on\t\tset DIVOT ON\n" );
-		fprintf( stdout, " -d, --di-off\t\tset DIVOT OFF\n" );
+		printf(" -e, --di-on\t\tset DIVOT ON\n" );
+		printf(" -d, --di-off\t\tset DIVOT OFF\n" );
 
-		fprintf( stdout, " -j, --df-on\t\tset Dither filter ON\n" );
-		fprintf( stdout, " -f, --df-off\t\tset Dither filter OFF\n" );
+		printf(" -j, --df-on\t\tset Dither filter ON\n" );
+		printf(" -f, --df-off\t\tset Dither filter OFF\n" );
 
 		printf("\nExtra options:\n");
-		fprintf( stdout, " -q, --dummy\t\tjust test - don't output file\n" );
-		fprintf( stdout, " -s, --swap\t\tswap VideoTable region (new experimental)\n" );
-		fprintf( stdout, " -n, --no-anti-aliasing\tdisable AA in VideoTable, too\n" );
-		//fprintf( stdout, " -t, --no-table\t\tdon't touch VideoTable at all\n" );
-		fprintf( stdout, " -k, --fast3d\t\tsearch F3D SETOTHERMODE_L (highly experimental)\n" );
-		fprintf( stdout, " -2, --f3dex2\t\tsearch F3DEX2 SETOTHERMODE_L (highly experimental)\n" );
-		fprintf( stdout, " -l, --videolist\tpatch VideoList - [stackable] (highly experimental)\n" );
+		printf(" -q, --dummy\t\tjust test - don't output file\n" );
+		printf(" -s, --swap\t\tswap VideoTable region (new experimental)\n" );
+		printf(" -n, --no-anti-aliasing\tdisable AA in VideoTable, too\n" );
+		//printf(" -t, --no-table\t\tdon't touch VideoTable at all\n" );
+		printf(" -k, --fast3d\t\tsearch F3D SETOTHERMODE_L (highly experimental)\n" );
+		printf(" -2, --f3dex2\t\tsearch F3DEX2 SETOTHERMODE_L (highly experimental)\n" );
+		printf(" -l, --videolist\tpatch VideoList - [stackable] (highly experimental)\n" );
 
 
 		printf("\nInformation:\n");
-		fprintf( stdout, " -h, --help\t\tdisplay this help and exit\n" );
-		fprintf( stdout, " -v, --verbose\t\tverbose\n" );
-		fprintf( stdout, " -z, --version\t\tversion info\n" );
+		printf(" -h, --help\t\tdisplay this help and exit\n" );
+		printf(" -v, --verbose\t\tverbose\n" );
+		printf(" -z, --version\t\tversion info\n" );
 
 		return 0;
 	}
 
 
 	if( gopt( options, 'z' ) ) {
-		fprintf( stdout, "u64aap version v%d.%d.%d\n", MAJOR_VERSION, MINOR_VERSION, BUGFIX_VERSION );
-		fprintf( stdout, "fork version: " xstr(GIT_ORIGIN) " " xstr(GIT_VERSION) "\n");
+		printf("u64aap version v%d.%d.%d\n", MAJOR_VERSION, MINOR_VERSION, BUGFIX_VERSION );
+		printf("fork version: " xstr(GIT_ORIGIN) " " xstr(GIT_VERSION) "\n");
 		return 0;
 	}
 
@@ -779,22 +743,22 @@ int main(int argc, const char **argv) {
 	}
 
 	if( gopt( options, 'a' ) && gopt( options, 'c' )) {
-		fprintf( stdout, "error: could not set Gamma correction ON and OFF at the same time\n" );
+		printf("error: could not set Gamma correction ON and OFF at the same time\n" );
 		return 0;
 	}
 
 	if( gopt( options, 'b' ) && gopt( options, 'g' )) {
-		fprintf( stdout, "error: could not set Gamma dithering ON and OFF at the same time\n" );
+		printf("error: could not set Gamma dithering ON and OFF at the same time\n" );
 		return 0;
 	}
 
 	if( gopt( options, 'e' ) && gopt( options, 'd' )) {
-		fprintf( stdout, "error: could not set DIVOT ON and OFF at the same time\n" );
+		printf("error: could not set DIVOT ON and OFF at the same time\n" );
 		return 0;
 	}
 
 	if( gopt( options, 'j' ) && gopt( options, 'f' )) {
-		fprintf( stdout, "error: could not set Dither filter ON and OFF at the same time\n" );
+		printf("error: could not set Dither filter ON and OFF at the same time\n" );
 		return 0;
 	}
 
@@ -809,15 +773,6 @@ int main(int argc, const char **argv) {
 	} else {
 		vl_level = 9;
 	}
-
-	if( verbosity > 1 ) {
-		fprintf( stderr, "being really verbose\n" );
-	}
-	else if( verbosity ) {
-		fprintf( stderr, "being verbose\n" );
-	}
-
-	printf("verbosity: %d\n", verbosity);
 
 	const char *filename_input;
 	const char *filename_output;
@@ -865,9 +820,7 @@ int main(int argc, const char **argv) {
 	}
 
 	if( gopt( options, 'o' ) ) {
-
 		vpf(1, "\n\nstage 0 - video table\n");
-
 
 		if( gopt( options, 'n' ) ) {
 		//disable anti aliasing
@@ -1001,9 +954,7 @@ int main(int argc, const char **argv) {
 				}
 			}
 
-
-
-		//end disable ant aliasing
+		//end disable anti aliasing
 		} else {
 		//normal swap
 			if( gopt( options, 's' ) ) {
@@ -1075,7 +1026,6 @@ int main(int argc, const char **argv) {
 
 		}
 		vpf(1, "=>> %d/18 modes patched!\n\n", patch_counter);
-
 	}
 
 	if(patch_counter>=1) {
