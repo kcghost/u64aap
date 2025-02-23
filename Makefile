@@ -7,12 +7,19 @@ CFLAGS=-D_LANGUAGE_C -DGIT_VERSION=$(GIT_VERSION) -DGIT_ORIGIN=$(GIT_ORIGIN) -I 
 
 all: u64aap n64crc
 
-u64aap: u64aap.c gopt.c gopt.h ultralib/src/io/vitbl.c
-	$(CC) $(CFLAGS) u64aap.c gopt.c ultralib/src/io/vitbl.c -o $@
+u64aap: gopt.o vitbl.o u64aap.o
+	$(CC) $(CFLAGS) $^ -o $@
 
-n64crc: n64crc.c
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+vitbl.o: ultralib/src/io/vitbl.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+n64crc: n64crc.o
 	$(CC) $< -o $@
 
 clean:
 	rm -f u64aap
 	rm -f n64crc
+	rm -f *.o
