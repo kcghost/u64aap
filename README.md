@@ -1,6 +1,7 @@
 # u64aap
-N64 video mode patcher.
 This is a fork of [saturnu's u64aap](https://github.com/saturnu/u64aap).
+`u64aap` is a video mode patcher for most N64 games.
+Primarily it can be used to disable the "blurry" anti-aliasing mode in a rom file.
 
 ## Results
 
