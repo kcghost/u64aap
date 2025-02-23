@@ -8,7 +8,7 @@
 
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 4
-#define BUGFIX_VERSION 4
+#define BUGFIX_VERSION 5
 
 #ifdef __unix__
 //unix
@@ -52,6 +52,77 @@ u8 patchDitherFilter_Testing() {
 	u32 inner_offset_end=0;
 	u32 diff=0;
 	u32 last_const_nr=0;
+	u8 should_patch = 0;
+
+	// parse settings
+	u8 setting[8]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+	printf("%-20s","Gamma correction:");
+	if( gopt( options, 'a' ) ) {
+		setting[0]=0x01;
+		setting[1]=0x02;
+		should_patch = 1;
+		printf("ON");
+	} else if( gopt( options, 'c' ) ) {
+		setting[0]=0x02;
+		setting[1]=0x01;
+		should_patch = 1;
+		printf("OFF");
+	} else {
+		printf("untouched");
+	}
+	printf("\n");
+
+	printf("%-20s","Gamma dithering:");
+	if( gopt( options, 'b' ) ) {
+		setting[2]=0x01;
+		setting[3]=0x02;
+		should_patch = 1;
+		printf("ON");
+	} else if( gopt( options, 'g' ) ) {
+		setting[2]=0x02;
+		setting[3]=0x01;
+		should_patch = 1;
+		printf("OFF");
+	} else {
+		printf("untouched");
+	}
+	printf("\n");
+
+	printf("%-20s","Divot:");
+	if( gopt( options, 'e' ) ) {
+		setting[4]=0x01;
+		setting[5]=0x02;
+		should_patch = 1;
+		printf("ON");
+	} else if( gopt( options, 'd' ) ) {
+		setting[4]=0x02;
+		setting[5]=0x01;
+		should_patch = 1;
+		printf("OFF");
+	} else {
+		printf("untouched");
+	}
+	printf("\n");
+
+	printf("%-20s","Dither Filter:");
+	if( gopt( options, 'j' ) ) {
+		setting[6]=0x01;
+		setting[7]=0x02;
+		should_patch = 1;
+		printf("ON");
+	} else if( gopt( options, 'f' ) ) {
+		setting[6]=0x02;
+		setting[7]=0x01;
+		should_patch = 1;
+		printf("OFF");
+	} else {
+		printf("untouched");
+	}
+
+	// skip patching (including bitmask) if no options are given
+	if (should_patch != 1) {
+		return 0;
+	}
 
 	/*
 	  ANDI -- Bitwise and immediate
@@ -262,8 +333,10 @@ u8 patchDitherFilter_Testing() {
 			}
 	}
 
+
+
 	if(found == 1) {
-		printf("patching dither filter bitmask...\n");
+		printf("%-20s%s\n","Dither Bitmask:", "patched");
 		memcpy(rom_blob + offset, _0000, 2);
 	}
 
@@ -326,63 +399,7 @@ u8 patchDitherFilter_Testing() {
 		*/
 
 		// 0x00 don't touch 0x01 on 0x02 off
-		u8 setting[8]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
-		printf("%-20s","Gamma correction:");
-		if( gopt( options, 'a' ) ) {
-			setting[0]=0x01;
-			setting[1]=0x02;
-			printf("ON");
-		} else if( gopt( options, 'c' ) ) {
-			setting[0]=0x02;
-			setting[1]=0x01;
-			printf("OFF");
-		} else {
-			printf("untouched");
-		}
-		printf("\n");
-
-		printf("%-20s","Gamma dithering:");
-		if( gopt( options, 'b' ) ) {
-			setting[2]=0x01;
-			setting[3]=0x02;
-			printf("ON");
-		} else if( gopt( options, 'g' ) ) {
-			setting[2]=0x02;
-			setting[3]=0x01;
-			printf("OFF");
-		} else {
-			printf("untouched");
-		}
-		printf("\n");
-
-		printf("%-20s","Divot:");
-		if( gopt( options, 'e' ) ) {
-			setting[4]=0x01;
-			setting[5]=0x02;
-			printf("ON");
-		} else if( gopt( options, 'd' ) ) {
-			setting[4]=0x02;
-			setting[5]=0x01;
-			printf("OFF");
-		} else {
-			printf("untouched");
-		}
-		printf("\n");
-
-		printf("%-20s","Dither Filter:");
-		if( gopt( options, 'j' ) ) {
-			setting[6]=0x01;
-			setting[7]=0x02;
-			printf("ON");
-		} else if( gopt( options, 'f' ) ) {
-			setting[6]=0x02;
-			setting[7]=0x01;
-			printf("OFF");
-		} else {
-			printf("untouched");
-		}
-		printf("\n\n");
 
 		if(branch_offset_found != 0) {
 			vpf(1, "patching branches...\n");
@@ -405,7 +422,9 @@ u8 patchDitherFilter_Testing() {
 				}
 			}
 
-			found=2;
+			found = 2;
+		} else {
+			printf("failed to find dither setting branches!");
 		}
 	}
 
@@ -943,9 +962,9 @@ int main(int argc, const char **argv) {
 	}
 
 	if(patch_counter >= 1) {
-		printf("%-20s %s\n","Video Table:", "patched");
+		printf("%-20s%s\n","Video Table:", "patched");
 	} else {
-		printf("%-20s %s\n","Video Table:", "untouched");
+		printf("%-20s%s\n","Video Table:", "untouched");
 	}
 
 	u8 patches = patchDitherFilter_Testing();
