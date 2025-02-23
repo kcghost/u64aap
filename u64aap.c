@@ -118,6 +118,7 @@ u8 patchDitherFilter_Testing() {
 	} else {
 		printf("untouched");
 	}
+	printf("\n");
 
 	// skip patching (including bitmask) if no options are given
 	if (should_patch != 1) {
@@ -560,7 +561,7 @@ void patchCtrl(u8 mode, u32 offset) {
 	memcpy(rom_blob + offset, value, 4);
 }
 
-size_t patchMode(u8 from_mode, u8 to_mode) {
+int patchMode(u8 from_mode, u8 to_mode) {
 	vpf(1, "search for mode: %d\n", from_mode);
 
 	u32 offset = searchOffset(from_mode);
@@ -575,184 +576,8 @@ size_t patchMode(u8 from_mode, u8 to_mode) {
 	return 0;
 }
 
-int main(int argc, const char **argv) {
-	printf("-== N64 AA-patcher ==- by saturnu\n\n");
-
-	options = gopt_sort( & argc, argv, gopt_start(
-		gopt_option( 'h', 0, gopt_shorts( 'h' ), gopt_longs( "help" )),
-		gopt_option( 'z', 0, gopt_shorts( 'z' ), gopt_longs( "version" )),
-		gopt_option( 'v', GOPT_REPEAT, gopt_shorts( 'v' ), gopt_longs( "verbose" )),
-
-		gopt_option( 'a', 0, gopt_shorts( 'a' ), gopt_longs( "gc-on" )),
-		gopt_option( 'c', 0, gopt_shorts( 'c' ), gopt_longs( "gc-off" )),
-
-		gopt_option( 'b', 0, gopt_shorts( 'b' ), gopt_longs( "gd-on" )),
-		gopt_option( 'g', 0, gopt_shorts( 'g' ), gopt_longs( "gd-off" )),
-
-		gopt_option( 'e', 0, gopt_shorts( 'e' ), gopt_longs( "di-on" )),
-		gopt_option( 'd', 0, gopt_shorts( 'd' ), gopt_longs( "di-off" )),
-
-		gopt_option( 'j', 0, gopt_shorts( 'j' ), gopt_longs( "df-on" )),
-		gopt_option( 'f', 0, gopt_shorts( 'f' ), gopt_longs( "df-off" )),
-
-		gopt_option( 'q', 0, gopt_shorts( 'q' ), gopt_longs( "dummy" )),
-		//gopt_option( 't', 0, gopt_shorts( 't' ), gopt_longs( "no-table" )),
-		//gopt_option( 'l', 0, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
-		gopt_option( 'l', GOPT_REPEAT, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
-
-		gopt_option( 'k', 0, gopt_shorts( 'k' ), gopt_longs( "fast3d" )),
-		gopt_option( '2', 0, gopt_shorts( '2' ), gopt_longs( "f3dex2" )),
-
-		gopt_option( 's', 0, gopt_shorts( 's' ), gopt_longs( "swap" )),
-		gopt_option( 'n', 0, gopt_shorts( 'n' ), gopt_longs( "no-anti-aliasing" )),
-
-		gopt_option( 'o', GOPT_ARG, gopt_shorts( 'o' ), gopt_longs( "output" )),
-		gopt_option( 'i', GOPT_ARG, gopt_shorts( 'i' ), gopt_longs( "input" ))  )
-	);
-
-	if( gopt( options, 'h' ) ) {
-		printf("u64aap - -== N64 AA-patcher ==-\n" );
-		printf("by saturnu <tt@anpa.nl>\n\n" );
-
-		printf("Input/Output: (required)\n");
-		printf(" -i, --input=filename.z64\tN64 Rom in z64 format\n" );
-		printf(" -o, --output=filename.z64\tN64 Rom in z64 format\n" );
-
-
-		printf("\nFilter options: (default: untouched)\n");
-		printf(" -a, --gc-on\t\tset Gamma correction ON\n" );
-		printf(" -c, --gc-off\t\tset Gamma correction OFF\n" );
-
-		printf(" -b, --gd-on\t\tset Gamma dithering ON\n" );
-		printf(" -g, --gd-off\t\tset Gamma dithering OFF\n" );
-
-		printf(" -e, --di-on\t\tset DIVOT ON\n" );
-		printf(" -d, --di-off\t\tset DIVOT OFF\n" );
-
-		printf(" -j, --df-on\t\tset Dither filter ON\n" );
-		printf(" -f, --df-off\t\tset Dither filter OFF\n" );
-
-		printf("\nExtra options:\n");
-		printf(" -q, --dummy\t\tjust test - don't output file\n" );
-		printf(" -s, --swap\t\tswap VideoTable region (new experimental)\n" );
-		printf(" -n, --no-anti-aliasing\tdisable AA in VideoTable, too\n" );
-		//printf(" -t, --no-table\t\tdon't touch VideoTable at all\n" );
-		printf(" -k, --fast3d\t\tsearch F3D SETOTHERMODE_L (highly experimental)\n" );
-		printf(" -2, --f3dex2\t\tsearch F3DEX2 SETOTHERMODE_L (highly experimental)\n" );
-		printf(" -l, --videolist\tpatch VideoList - [stackable] (highly experimental)\n" );
-
-
-		printf("\nInformation:\n");
-		printf(" -h, --help\t\tdisplay this help and exit\n" );
-		printf(" -v, --verbose\t\tverbose\n" );
-		printf(" -z, --version\t\tversion info\n" );
-
-		return 0;
-	}
-
-
-	if( gopt( options, 'z' ) ) {
-		printf("u64aap version v%d.%d.%d\n", MAJOR_VERSION, MINOR_VERSION, BUGFIX_VERSION );
-		printf("fork version: " xstr(GIT_ORIGIN) " " xstr(GIT_VERSION) "\n");
-		return 0;
-	}
-
-	if( !gopt( options, 'i' ) ) {
-		//needed every time
-		printf("input file missing! use 'u64aap -h' for help\n");
-		return 0;
-	}
-
-	if( !gopt( options, 'o' ) ) {
-		//needed every time
-		printf("output file missing! use 'u64aap -h' for help\n");
-		return 0;
-	}
-
-	if( gopt( options, 'l' ) > 0) {
-		if( !(gopt( options, 'k' ) || gopt( options, '2' )) ) {
-
-			printf("uCode flag missing! use 'u64aap -h' for help\n");
-			return 0;
-		}
-	}
-
-	if( gopt( options, 'a' ) && gopt( options, 'c' )) {
-		printf("error: could not set Gamma correction ON and OFF at the same time\n" );
-		return 0;
-	}
-
-	if( gopt( options, 'b' ) && gopt( options, 'g' )) {
-		printf("error: could not set Gamma dithering ON and OFF at the same time\n" );
-		return 0;
-	}
-
-	if( gopt( options, 'e' ) && gopt( options, 'd' )) {
-		printf("error: could not set DIVOT ON and OFF at the same time\n" );
-		return 0;
-	}
-
-	if( gopt( options, 'j' ) && gopt( options, 'f' )) {
-		printf("error: could not set Dither filter ON and OFF at the same time\n" );
-		return 0;
-	}
-
-	if(gopt( options, 'v' ) < 10) {
-		verbosity = gopt( options, 'v' );
-	} else {
-		verbosity = 9;
-	}
-
-	if(gopt( options, 'l' ) < 10) {
-		vl_level = gopt( options, 'l' );
-	} else {
-		vl_level = 9;
-	}
-
-	const char *filename_input;
-	const char *filename_output;
-
-	if( gopt( options, 'i' ) ) {
-
-		if( gopt_arg( options, 'i', & filename_input ) && strcmp( filename_input, "-" ) ) {
-
-			FILE *f;
-			f=fopen(filename_input, "rb");
-
-			if (f == NULL) {
-				printf("error: Faild to open rom\n");
-				return 0;
-			} else {
-				printf("%s found\n", filename_input);
-			}
-
-			fseek(f, 0, SEEK_END);
-			fsize = ftell(f);
-			fseek(f, 0, SEEK_SET);
-
-			vpf(2, "Rom size: %d\n",fsize);
-
-			rom_blob = malloc(fsize + 1);
-			fread(rom_blob, fsize, 1, f);
-			fclose(f);
-
-		}
-
-	}
-
+int patch_vt() {
 	int patch_counter=0;
-
-	if(vl_level) {
-		if( gopt( options, 'k')) {
-			printf("\n\nFast3D: \n");
-			patch_vl(vl_level, 0);
-		}
-
-		if(gopt( options, '2')) {
-			printf("F3DEX2: \n");
-			patch_vl(vl_level, 1);
-		}
-	}
 
 	if( gopt( options, 'o' ) ) {
 		vpf(1, "\n\nstage 0 - video table\n");
@@ -967,7 +792,185 @@ int main(int argc, const char **argv) {
 		printf("%-20s%s\n","Video Table:", "untouched");
 	}
 
+	return patch_counter;
+}
+
+int main(int argc, const char **argv) {
+	printf("-== N64 AA-patcher ==- by saturnu\n\n");
+
+	options = gopt_sort( & argc, argv, gopt_start(
+		gopt_option( 'h', 0, gopt_shorts( 'h' ), gopt_longs( "help" )),
+		gopt_option( 'z', 0, gopt_shorts( 'z' ), gopt_longs( "version" )),
+		gopt_option( 'v', GOPT_REPEAT, gopt_shorts( 'v' ), gopt_longs( "verbose" )),
+
+		gopt_option( 'a', 0, gopt_shorts( 'a' ), gopt_longs( "gc-on" )),
+		gopt_option( 'c', 0, gopt_shorts( 'c' ), gopt_longs( "gc-off" )),
+
+		gopt_option( 'b', 0, gopt_shorts( 'b' ), gopt_longs( "gd-on" )),
+		gopt_option( 'g', 0, gopt_shorts( 'g' ), gopt_longs( "gd-off" )),
+
+		gopt_option( 'e', 0, gopt_shorts( 'e' ), gopt_longs( "di-on" )),
+		gopt_option( 'd', 0, gopt_shorts( 'd' ), gopt_longs( "di-off" )),
+
+		gopt_option( 'j', 0, gopt_shorts( 'j' ), gopt_longs( "df-on" )),
+		gopt_option( 'f', 0, gopt_shorts( 'f' ), gopt_longs( "df-off" )),
+
+		gopt_option( 'q', 0, gopt_shorts( 'q' ), gopt_longs( "dummy" )),
+		//gopt_option( 't', 0, gopt_shorts( 't' ), gopt_longs( "no-table" )),
+		//gopt_option( 'l', 0, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
+		gopt_option( 'l', GOPT_REPEAT, gopt_shorts( 'l' ), gopt_longs( "videolist" )),
+
+		gopt_option( 'k', 0, gopt_shorts( 'k' ), gopt_longs( "fast3d" )),
+		gopt_option( '2', 0, gopt_shorts( '2' ), gopt_longs( "f3dex2" )),
+
+		gopt_option( 's', 0, gopt_shorts( 's' ), gopt_longs( "swap" )),
+		gopt_option( 'n', 0, gopt_shorts( 'n' ), gopt_longs( "no-anti-aliasing" )),
+
+		gopt_option( 'o', GOPT_ARG, gopt_shorts( 'o' ), gopt_longs( "output" )),
+		gopt_option( 'i', GOPT_ARG, gopt_shorts( 'i' ), gopt_longs( "input" ))  )
+	);
+
+	if( gopt( options, 'h' ) ) {
+		printf("u64aap - -== N64 AA-patcher ==-\n" );
+		printf("by saturnu <tt@anpa.nl>\n\n" );
+
+		printf("Input/Output: (required)\n");
+		printf(" -i, --input=filename.z64\tN64 Rom in z64 format\n" );
+		printf(" -o, --output=filename.z64\tN64 Rom in z64 format\n" );
+
+
+		printf("\nFilter options: (default: untouched)\n");
+		printf(" -a, --gc-on\t\tset Gamma correction ON\n" );
+		printf(" -c, --gc-off\t\tset Gamma correction OFF\n" );
+
+		printf(" -b, --gd-on\t\tset Gamma dithering ON\n" );
+		printf(" -g, --gd-off\t\tset Gamma dithering OFF\n" );
+
+		printf(" -e, --di-on\t\tset DIVOT ON\n" );
+		printf(" -d, --di-off\t\tset DIVOT OFF\n" );
+
+		printf(" -j, --df-on\t\tset Dither filter ON\n" );
+		printf(" -f, --df-off\t\tset Dither filter OFF\n" );
+
+		printf("\nExtra options:\n");
+		printf(" -q, --dummy\t\tjust test - don't output file\n" );
+		printf(" -s, --swap\t\tswap VideoTable region (new experimental)\n" );
+		printf(" -n, --no-anti-aliasing\tdisable AA in VideoTable, too\n" );
+		//printf(" -t, --no-table\t\tdon't touch VideoTable at all\n" );
+		printf(" -k, --fast3d\t\tsearch F3D SETOTHERMODE_L (highly experimental)\n" );
+		printf(" -2, --f3dex2\t\tsearch F3DEX2 SETOTHERMODE_L (highly experimental)\n" );
+		printf(" -l, --videolist\tpatch VideoList - [stackable] (highly experimental)\n" );
+
+
+		printf("\nInformation:\n");
+		printf(" -h, --help\t\tdisplay this help and exit\n" );
+		printf(" -v, --verbose\t\tverbose\n" );
+		printf(" -z, --version\t\tversion info\n" );
+
+		return 0;
+	}
+
+
+	if( gopt( options, 'z' ) ) {
+		printf("u64aap version v%d.%d.%d\n", MAJOR_VERSION, MINOR_VERSION, BUGFIX_VERSION );
+		printf("fork version: " xstr(GIT_ORIGIN) " " xstr(GIT_VERSION) "\n");
+		return 0;
+	}
+
+	if( !gopt( options, 'i' ) ) {
+		//needed every time
+		printf("input file missing! use 'u64aap -h' for help\n");
+		return 0;
+	}
+
+	if( !gopt( options, 'o' ) ) {
+		//needed every time
+		printf("output file missing! use 'u64aap -h' for help\n");
+		return 0;
+	}
+
+	if( gopt( options, 'l' ) > 0) {
+		if( !(gopt( options, 'k' ) || gopt( options, '2' )) ) {
+
+			printf("uCode flag missing! use 'u64aap -h' for help\n");
+			return 0;
+		}
+	}
+
+	if( gopt( options, 'a' ) && gopt( options, 'c' )) {
+		printf("error: could not set Gamma correction ON and OFF at the same time\n" );
+		return 0;
+	}
+
+	if( gopt( options, 'b' ) && gopt( options, 'g' )) {
+		printf("error: could not set Gamma dithering ON and OFF at the same time\n" );
+		return 0;
+	}
+
+	if( gopt( options, 'e' ) && gopt( options, 'd' )) {
+		printf("error: could not set DIVOT ON and OFF at the same time\n" );
+		return 0;
+	}
+
+	if( gopt( options, 'j' ) && gopt( options, 'f' )) {
+		printf("error: could not set Dither filter ON and OFF at the same time\n" );
+		return 0;
+	}
+
+	if(gopt( options, 'v' ) < 10) {
+		verbosity = gopt( options, 'v' );
+	} else {
+		verbosity = 9;
+	}
+
+	if(gopt( options, 'l' ) < 10) {
+		vl_level = gopt( options, 'l' );
+	} else {
+		vl_level = 9;
+	}
+
+	const char *filename_input;
+	const char *filename_output;
+
+	if( gopt( options, 'i' ) ) {
+		if( gopt_arg( options, 'i', & filename_input ) && strcmp( filename_input, "-" ) ) {
+
+			FILE *f;
+			f=fopen(filename_input, "rb");
+
+			if (f == NULL) {
+				printf("error: Failed to open rom\n");
+				return 0;
+			} else {
+				printf("%s found\n", filename_input);
+			}
+
+			fseek(f, 0, SEEK_END);
+			fsize = ftell(f);
+			fseek(f, 0, SEEK_SET);
+
+			vpf(2, "Rom size: %d\n",fsize);
+
+			rom_blob = malloc(fsize + 1);
+			fread(rom_blob, fsize, 1, f);
+			fclose(f);
+		}
+	}
+
+	if(vl_level) {
+		if( gopt( options, 'k')) {
+			printf("%-20spatched level %d\n","Fast3D:", vl_level);
+			patch_vl(vl_level, 0);
+		}
+		if(gopt( options, '2')) {
+			printf("%-20spatched level %d\n","F3DEX2:", vl_level);
+			patch_vl(vl_level, 1);
+		}
+	}
+	patch_vt();
 	u8 patches = patchDitherFilter_Testing();
+
+	printf("\n");
 	if(patches > 1) {
 		if( gopt( options, 'o' ) ) {
 
@@ -983,7 +986,7 @@ int main(int argc, const char **argv) {
 			}
 		}
 		if( gopt( options, 'q' ) ) {
-			printf("result: dummy mode - file patched!\n");
+			printf("result: dummy mode - file would have been patched!\n");
 		} else {
 			printf("result: file patched!\n");
 		}
@@ -992,6 +995,6 @@ int main(int argc, const char **argv) {
 		printf("\n\nresult: file not patched!\n");
 	}
 
-	printf("done...\n");
+	printf("done!\n");
 	return 0;
 }
