@@ -25,8 +25,8 @@
 
 void *options;
 long fsize;
-int verbosity=0;
-int vl_level=0;
+int verbosity = 0;
+int vl_level = 0;
 unsigned char *rom_blob;
 
 // verbose printf
@@ -234,7 +234,7 @@ u8 patchDitherFilter_Testing() {
 		}
 
 		//30 8C 00 40
-		if(found!=1)
+		if(found != 1)
 			for(offset=inner_offset_start_alt_real; offset < inner_offset_end; ++offset) {
 				if(!memcmp(_0040, rom_blob + offset, 2)) {
 
@@ -247,58 +247,49 @@ u8 patchDitherFilter_Testing() {
 						printf("-->> alt offset: %lx\n", offset);
 						printf("-->> read test alt: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
 					}
-					//  printf("bitshift: c==%x\n",test[0]>>2);
+					// printf("bitshift: c==%x\n",test[0]>>2);
 
 					if((test[0] & 0xFC) == 0x30) {
 						//if(test[0]>>2 == 0xc){
 						vpf(1, "patchoffset found alt! @%x\n", offset);
-						found=1;
+						found = 1;
 					} else {
 						vpf(1, "patchoffset not found! @%x\n", offset);
 					}
 
 					break;
 				}
-
 			}
 	}
 
-	if(found==1) {
-		vpf(1, " ### patching dither filter bitmask...\n");
+	if(found == 1) {
+		printf("patching dither filter bitmask...\n");
 		memcpy(rom_blob + offset, _0000, 2);
 	}
 
 	//stage 2
-	if(inner_offset_start_real!=0 && found==1) {
-
-
+	if(inner_offset_start_real !=0 && found==1) {
 		u8 branch_offset_found=0;
 
-		u8 b=0;
+		u8 b = 0;
 		u32 branch[8]= {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0};
 
 		vpf(1, "\n\nstage 2 - branch\n");
-		//for(offset=inner_offset_end+2; offset < inner_offset_end+64; offset+=4){
 		for(offset=first_const_offset_real+2-64; offset < inner_offset_end+64; offset+=4) {
-
 			unsigned char test[4] = { 0x00, 0x00, 0x00, 0x00 };
-
 			memcpy(test, rom_blob + offset, 4);
 
+			// printf("-->> beqz offset: %x\n", offset);
+			// printf("-->> beqz/beqzl read test: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
 
-			//  printf("-->> beqz offset: %x\n", offset);
-			//  printf("-->> beqz/beqzl read test: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
-
-			//[  000100]01 10000000 00000000 00001011
-			//beqz 0x100
+			// [  000100]01 10000000 00000000 00001011
+			// beqz 0x100
 			if((test[0] & 0xFC) == 0x10) { //beqz
 				if((test[1] & 0x1F) == 0x00) {
 					vpf(2, "-->> beqz/beqzl read: %02x %02x %02x %02x \n", test[0], test[1], test[2], test[3]);
 					vpf(2, "++ next beqz found!\n");
 					branch_offset_found=offset;
 					branch[b++]=offset;
-					//  break;
-
 				}
 			}
 
@@ -308,43 +299,36 @@ u8 patchDitherFilter_Testing() {
 					vpf(2, "++ next beqzl found!\n");
 					branch_offset_found=offset;
 					branch[b++]=offset;
-					//  break;
-
 				}
 			}
-
-
 		}
 
 		vpf(2, "branches (%d/8)\n",b);
-
 		/*
+			noop branch to activate
+			zero 's' to deactivate
 
-		noop branch to activate
-		zero 's' to deactivate
+			Gamma correction ON/OF
+			0 VI_GAMMA_ON a
+			1 VI_GAMMA_OFF c
 
+			Gamma dithering ON/OFF
+			2 VI_GAMMA_DITHER_ON b
+			3 VI_GAMMA_DITHER_OFF g
 
-		Gamma correction ON/OF
-		0 VI_GAMMA_ON a
-		1 VI_GAMMA_OFF c
+			DIVOT ON/OFF
+			4 VI_DIVOT_ON e
+			5 VI_DIVOT_OFF d
 
-		Gamma dithering ON/OFF
-		2 VI_GAMMA_DITHER_ON b
-		3 VI_GAMMA_DITHER_OFF g
-
-		DIVOT ON/OFF
-		4 VI_DIVOT_ON e
-		5 VI_DIVOT_OFF d
-
-		Dither filter ON/OFF
-		6 VI_DITHER_FILTER_ON j
-		7 _VI_DITHER_FILTER_OFF f
+			Dither filter ON/OFF
+			6 VI_DITHER_FILTER_ON j
+			7 _VI_DITHER_FILTER_OFF f
 		*/
 
-		//0x00 don't touch 0x01 on 0x02 off
+		// 0x00 don't touch 0x01 on 0x02 off
 		u8 setting[8]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
-		printf("\nGamma correction:\t");
+		printf("%-20s","Gamma correction:");
 		if( gopt( options, 'a' ) ) {
 			setting[0]=0x01;
 			setting[1]=0x02;
@@ -358,7 +342,7 @@ u8 patchDitherFilter_Testing() {
 		}
 		printf("\n");
 
-		printf("Gamma dithering:\t");
+		printf("%-20s","Gamma dithering:");
 		if( gopt( options, 'b' ) ) {
 			setting[2]=0x01;
 			setting[3]=0x02;
@@ -372,7 +356,7 @@ u8 patchDitherFilter_Testing() {
 		}
 		printf("\n");
 
-		printf("DIVOT:\t\t\t");
+		printf("%-20s","Divot:");
 		if( gopt( options, 'e' ) ) {
 			setting[4]=0x01;
 			setting[5]=0x02;
@@ -386,7 +370,7 @@ u8 patchDitherFilter_Testing() {
 		}
 		printf("\n");
 
-		printf("Dither filter:\t\t");
+		printf("%-20s","Dither Filter:");
 		if( gopt( options, 'j' ) ) {
 			setting[6]=0x01;
 			setting[7]=0x02;
@@ -400,19 +384,18 @@ u8 patchDitherFilter_Testing() {
 		}
 		printf("\n\n");
 
-
-		vpf(1, " ### patching branches...\n");
-		if(branch_offset_found!=0) {
+		if(branch_offset_found != 0) {
+			vpf(1, "patching branches...\n");
 			//nop out
 			u8 z=0;
 			for(z=0; z<8; z++) {
 
 				if(setting[z]==0x1) {
-					//noop branche
+					// noop branches
 					memcpy(rom_blob + branch[z], nop, 4);
 					vpf(2, "-->> nop: %02x %02x %02x %02x \n", nop[0], nop[1], nop[2], nop[3]);
-				} else   if(setting[z]==0x02) {
-					//zero s
+				} else if(setting[z]==0x02) {
+					// zero s
 					unsigned char rom_branch[2] = { 0x00, 0x00};
 					memcpy(rom_branch, rom_blob + branch[z], 2);
 					rom_branch[0]&=0xFC;
@@ -420,69 +403,16 @@ u8 patchDitherFilter_Testing() {
 					memcpy(rom_blob + branch[z], rom_branch, 2);
 					vpf(2, "-->> rb: %02x %02x \n", rom_branch[0], rom_branch[1]);
 				}
-
 			}
 
 			found=2;
 		}
-
-		/*
-		if(branch_offset_found!=0){
-		  //nop out
-		  printf(" ### patching branch...\n");
-		    memcpy(rom_blob + offset, nop, 4);
-		    found=2;
-		}
-		*/
-
 	}
-	/*
-	pokemon
-	beqzl (zero) t9 label
-	53 20 00 0F
-	0101 0011 0010 0000 0000 0000 000 01111
-	0001 00ss ssst tttt iiii iiii iiii iiii
-
-	beqz  (zero) t4 label
-	11 80 00 0B
-	0001 0001 1000 0000 0000 0000 0000 1011
-	0001 00ss ssst tttt iiii iiii iiii iiii
-
-	mario
-	beqz
-	10 40 00 0C
-	0001 0000 0100 0000 0000 0000 0000 1100
-	0001 00ss ssst tttt iiii iiii iiii iiii
-
-
-	after 0xFFFFFCFF in +4bytes sections for the next branch
-
-	search for beqz
-	0001 00ss sss0 0000 iiii iiii iiii iiii
-
-	search for beqzl
-	0101 00ss sss0 0000 iiii iiii iiii iiii
-
-	before 0xFFFEFFFF
-
-	*/
 
 	return found;
 }
 
-void patchCtrl(u8 mode, u32 offset) {
-	unsigned char value[4];
-
-	u32 ctrl = osViModeTable[mode].comRegs.ctrl;
-	value[0] = ctrl>>24;
-	value[1] = ctrl>>16;
-	value[2] = ctrl>>8;
-	value[3] = ctrl;
-
-	memcpy(rom_blob + offset, value, 4);
-}
-
-size_t searchOffset_vl(u8 level, u8 ucode) {
+void patch_vl(u8 level, u8 ucode) {
 	size_t offset = 0;
 
 	unsigned char testme[4] = {
@@ -535,8 +465,6 @@ size_t searchOffset_vl(u8 level, u8 ucode) {
 			vpf(1, "%02x\n", rom_blob[offset + 7] );
 		}
 	}
-
-	return offset;
 }
 
 int compare_u32(u32 reg, const void* p2) {
@@ -553,7 +481,7 @@ size_t searchOffset(u8 scanmode) {
 	u_int32_t ctrl;
 	int count;
 
-	vpf(1, "\nsearching for video table offset in rom...\n");
+	vpf(1, "searching for video table offset in rom...\n");
 
 	ctrl = osViModeTable[scanmode].comRegs.ctrl;
 
@@ -593,30 +521,36 @@ size_t searchOffset(u8 scanmode) {
 				} else {
 					vpf(1, "vt entry maybe found! (%d/8) trying anyway...\n" ,count);
 				}
-				break;
-			} else {
-				printf("video table could not be found!\n");
+				return offset;
 			}
-
 		}
-
 	}
 
-	return offset;
+	return -1;
+}
+
+void patchCtrl(u8 mode, u32 offset) {
+	unsigned char value[4];
+
+	u32 ctrl = osViModeTable[mode].comRegs.ctrl;
+	value[0] = ctrl>>24;
+	value[1] = ctrl>>16;
+	value[2] = ctrl>>8;
+	value[3] = ctrl;
+
+	memcpy(rom_blob + offset, value, 4);
 }
 
 size_t patchMode(u8 from_mode, u8 to_mode) {
-	vpf(1, "search for mode: %d\n",from_mode);
+	vpf(1, "search for mode: %d\n", from_mode);
 
 	u32 offset = searchOffset(from_mode);
-
-	if(offset == fsize) {
+	if(offset < 0) {
 		vpf(1, "error: mode: %d no VT offset found\n", from_mode);
 		return -1;
 	}
 
-	vpf(2, "found at offset: %08x\n",offset);
-
+	vpf(2, "found at offset: %08x\n", offset);
 	patchCtrl(to_mode, offset);
 
 	return 0;
@@ -658,17 +592,6 @@ int main(int argc, const char **argv) {
 	);
 
 	if( gopt( options, 'h' ) ) {
-
-#ifdef __unix__
-		//unix
-		printf("Syntax: u64aap [options] -i input.z64 -o output.z64\n\n");
-#elif defined _WIN32 || defined _WIN64
-		//windows
-		printf("Syntax: u64aap [options] -i input.z64 -o output.z64\n\n");
-#else
-#error "unknown platform"
-#endif
-
 		printf("u64aap - -== N64 AA-patcher ==-\n" );
 		printf("by saturnu <tt@anpa.nl>\n\n" );
 
@@ -714,13 +637,6 @@ int main(int argc, const char **argv) {
 		printf("fork version: " xstr(GIT_ORIGIN) " " xstr(GIT_VERSION) "\n");
 		return 0;
 	}
-
-	/*
-	  if(argv[1]==NULL){
-			printf("error: please use a z64 rom as parameter\n");
-			return 0;
-		}
-	  */
 
 	if( !gopt( options, 'i' ) ) {
 		//needed every time
@@ -807,15 +723,15 @@ int main(int argc, const char **argv) {
 
 	int patch_counter=0;
 
-	if( vl_level ) {
-		if( gopt( options, 'k' ) ) {
+	if(vl_level) {
+		if( gopt( options, 'k')) {
 			printf("\n\nFast3D: \n");
-			searchOffset_vl(vl_level, 0);
+			patch_vl(vl_level, 0);
 		}
 
-		if( gopt( options, '2' ) ) {
+		if(gopt( options, '2')) {
 			printf("F3DEX2: \n");
-			searchOffset_vl(vl_level, 1);
+			patch_vl(vl_level, 1);
 		}
 	}
 
@@ -823,8 +739,7 @@ int main(int argc, const char **argv) {
 		vpf(1, "\n\nstage 0 - video table\n");
 
 		if( gopt( options, 'n' ) ) {
-		//disable anti aliasing
-
+			//disable anti aliasing
 			if( !gopt( options, 's' ) ) {
 
 				vpf(1, "\n\nstage 0 - disable aa in video table\n");
@@ -888,7 +803,6 @@ int main(int argc, const char **argv) {
 
 
 			} else { //swap video tables, too
-
 				if(verbosity >= 1) {
 					printf("stage 0 - disable aa in video table + region swap\n");
 					printf("stage 0.1 ntsc->pal\n");
@@ -1028,14 +942,14 @@ int main(int argc, const char **argv) {
 		vpf(1, "=>> %d/18 modes patched!\n\n", patch_counter);
 	}
 
-	if(patch_counter>=1) {
-		printf("\nVideo Table:\t\tpatched\n");
+	if(patch_counter >= 1) {
+		printf("%-20s %s\n","Video Table:", "patched");
 	} else {
-		printf("\nVideo Table:\t\tuntouched\n");
+		printf("%-20s %s\n","Video Table:", "untouched");
 	}
 
-	u8 patches=patchDitherFilter_Testing();
-	if(patches>1) {
+	u8 patches = patchDitherFilter_Testing();
+	if(patches > 1) {
 		if( gopt( options, 'o' ) ) {
 
 			if( gopt_arg( options, 'o', & filename_output ) && strcmp( filename_output, "-" ) ) {
@@ -1047,7 +961,6 @@ int main(int argc, const char **argv) {
 					fwrite(rom_blob, 1, fsize, fpw);
 					fclose(fpw);
 				}
-
 			}
 		}
 		if( gopt( options, 'q' ) ) {
