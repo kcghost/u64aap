@@ -2,6 +2,12 @@
 N64 video mode patcher.
 This is a fork of [saturnu's u64aap](https://github.com/saturnu/u64aap).
 
+## Results
+
+Tested with Retroarch Mupen64Plus-Next Core and Angrylion RDP plugin:
+![Mario Kart 64 with AA](mk64.png)
+![Mario Kart 64 with AA disabled](mk64noaa.png)
+
 ## Build
 ```
 git clone git@github.com:kcghost/u64aap.git
@@ -48,7 +54,7 @@ Information:
 
 Typical usage:
 ```
-./u64aap -nf -i "Mario Kart 64 (USA).z64" -o "Mario Kart 64 (USA) (NoAA).z64"
+./u64aap -n -i "Mario Kart 64 (USA).z64" -o "Mario Kart 64 (USA) (NoAA).z64"
 ./n64crc "Mario Kart 64 (USA) (NoAA).z64"
 ```
 
