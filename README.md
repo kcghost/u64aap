@@ -6,6 +6,7 @@ Primarily it can be used to disable the "blurry" anti-aliasing mode in a rom fil
 ## Results
 
 Tested with Retroarch Mupen64Plus-Next Core and Angrylion RDP plugin:
+
 ![Mario Kart 64 with AA](mk64.png)
 ![Mario Kart 64 with AA disabled](mk64noaa.png)
 
